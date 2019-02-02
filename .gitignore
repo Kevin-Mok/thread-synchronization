@@ -1,0 +1,5 @@
+*.o
+*.pdf
+
+commit-msg.txt
+a2/carsim
