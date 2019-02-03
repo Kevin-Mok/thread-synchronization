@@ -64,7 +64,7 @@ void goThroughStopSign(Car* car, StopSign* intersection) {
 	int quadrants[QUADRANT_COUNT];
 	int quadrantCount = getStopSignRequiredQuadrants(car, quadrants);
 	for (int i = 0; i < quadrantCount; i++) {
-		enterMutexAccessValidator(&intersection->quadrants[i].validator, car);
+		enterMutexAccessValidator(&intersection->quadrants[quadrants[i]].validator, car);
 	}
 
 	// Sleep, representing the car moving through the intersection.
@@ -82,26 +82,26 @@ void goThroughStopSign(Car* car, StopSign* intersection) {
 
 	// Mark down that this car is is done travelling through each quadrant.
 	for (int i = 0; i < quadrantCount; i++) {
-		exitMutexAccessValidator(&intersection->quadrants[i].validator, car);
+		exitMutexAccessValidator(&intersection->quadrants[quadrants[i]].validator, car);
 	}
 }
 
 int getStopSignRequiredQuadrants(Car* car, int* quadrants) {
 
-	// Assume its going east. We can rotate after.
+	// Assume its from east. We can rotate after.
 	int quadrantCount;
 	if (car->action == LEFT_TURN) {
 		quadrantCount = 3;
-		quadrants[0] = 2;
-		quadrants[1] = 3;
-		quadrants[2] = 1;
+		quadrants[0] = 1;
+		quadrants[1] = 0;
+		quadrants[2] = 2;
 	} else if (car->action == RIGHT_TURN) {
 		quadrantCount = 1;
-		quadrants[0] = 2;
+		quadrants[0] = 1;
 	} else if (car->action == STRAIGHT) {
 		quadrantCount = 2;
-		quadrants[0] = 2;
-		quadrants[1] = 3;
+		quadrants[0] = 1;
+		quadrants[1] = 0;
 	} else {
 
 		// Should not go here.
