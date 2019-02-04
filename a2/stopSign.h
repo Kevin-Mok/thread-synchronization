@@ -30,6 +30,17 @@ typedef struct _IntersectionQuadrant {
 	* @brief Validator that detects collisions between cars.
 	*/
 	MutexAccessValidator validator;
+	
+	/**
+	* @brief Counter for assigning tokens.
+	*/
+	int tokenCounter;
+	
+	/**
+	* @brief Array of car tokens, one for each car in the simulation, that
+	* records that the car entered and exited the quadrant.
+	*/
+	CarToken* tokens;
 
 } IntersectionQuad;
 
@@ -52,17 +63,6 @@ typedef struct _StopSign {
 	* it is going.
 	*/
 	IntersectionQuad quadrants[QUADRANT_COUNT];
-
-	/**
-	* @brief Array of car tokens, one for each car in the simulation, that
-	* records that the car entered and exited the intersection.
-	*/
-	CarToken* tokens;
-
-	/**
-	* @brief Counter for assigning tokens.
-	*/
-	int tokenCounter;
 
 } StopSign;
 

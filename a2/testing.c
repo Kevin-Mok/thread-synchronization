@@ -294,7 +294,10 @@ void checkStopSign(SafeStopSign* sign, CarContext* contexts,
 		checkTokensUnique(sign->base.entryLanes[i].enterTokens, carCount);
 		checkTokensUnique(sign->base.entryLanes[i].exitTokens, carCount);
 	}
-	checkTokensUnique(sign->base.tokens, carCount);
+	
+	for (int i = 0; i < 4; i++) {
+	    checkTokensUnique(sign->base.quadrants[i].tokens, carCount);
+	}
 
 	printf("Checking tokens for each car:\n");
 	for (int i = 0; i < carCount; i++) {
@@ -320,11 +323,15 @@ void checkStopSign(SafeStopSign* sign, CarContext* contexts,
 		}
 
 		// Check stop sign tokens.
-		{
-			if (!sign->base.tokens[i].valid) {
-				fprintf(stderr, "Car %d did not get a stop sign token.\n", i);
+		int quadIndices[3];
+		int quadCount = getStopSignRequiredQuadrants(original, quadIndices);
+		for (int j = 0; j < quadCount; j++) {
+		    IntersectionQuad* quad = &sign->base.quadrants[quadIndices[j]];
+			if (!quad->tokens[i].valid) {
+				fprintf(stderr, "Car %d did not get a stop sign token from "\
+				    "one of the quadrants it was supposed to.\n", i);
 			}
-			if (!checkCarMatch(original, &sign->base.tokens[i].carCopy)) {
+			if (!checkCarMatch(original, &quad->tokens[i].carCopy)) {
 				fprintf(stderr, "Car %d does not match its stop sign copy.\n", i);
 			}
 		}

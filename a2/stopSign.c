@@ -9,26 +9,23 @@ void initStopSign(StopSign* stopSign, int carCount) {
 
 	// Initialize lanes.
 	for (int i = 0; i < DIRECTION_COUNT; i++) {
-		size_t size = sizeof(CarToken) * carCount;
+	    size_t size = sizeof(CarToken) * carCount;
 		stopSign->entryLanes[i].enterTokens = (CarToken*)malloc(size);
 		memset(stopSign->entryLanes[i].enterTokens, 0, size);
 		stopSign->entryLanes[i].exitTokens = (CarToken*)malloc(size);
 		memset(stopSign->entryLanes[i].exitTokens, 0, size);
-
 		stopSign->entryLanes[i].enterCounter = 0;
 		stopSign->entryLanes[i].exitCounter = 0;
 	}
 
-	// Initialize tokens for the intersection.
-	size_t size = sizeof(CarToken) * carCount;
-	stopSign->tokens = (CarToken*)malloc(size);
-	memset(stopSign->tokens, 0, size);
-
-	stopSign->tokenCounter = 0;
-
 	// Initialize quadrants of the intersection.
 	for (int i = 0; i < QUADRANT_COUNT; i++) {
 		initMutexAccessValidator(&stopSign->quadrants[i].validator);
+		stopSign->quadrants[i].tokenCounter = 0;
+		
+		size_t size = sizeof(CarToken) * carCount;
+		stopSign->quadrants[i].tokens = (CarToken*)malloc(size);
+		memset(stopSign->quadrants[i].tokens, 0, size);
 	}
 }
 
@@ -39,14 +36,12 @@ void destroyStopSign(StopSign* stopSign) {
 		free(stopSign->entryLanes[i].enterTokens);
 		free(stopSign->entryLanes[i].exitTokens);
 	}
-
-	free(stopSign->tokens);
-
+	
 	// free quadrants of the intersection.
 	for (int i = 0; i < QUADRANT_COUNT; i++) {
 		destructMutexAccessValidator(&stopSign->quadrants[i].validator);
+		free(stopSign->quadrants[i].tokens);
 	}
-
 }
 
 int getLaneIndex(Car* car) {
@@ -59,17 +54,16 @@ EntryLane* getLane(Car* car, StopSign* intersection) {
 }
 
 void goThroughStopSign(Car* car, StopSign* intersection) {
-
 	// Mark down that this car is travelling through each quadrant
 	int quadrants[QUADRANT_COUNT];
 	int quadrantCount = getStopSignRequiredQuadrants(car, quadrants);
 	for (int i = 0; i < quadrantCount; i++) {
 		enterMutexAccessValidator(&intersection->quadrants[quadrants[i]].validator, car);
 	}
-
+	
 	// Sleep, representing the car moving through the intersection.
-	nap(3000);
-
+	nap(2000);
+	
 	// Collect a token for passing through the intersection.
 	EntryLane* lane = getLane(car, intersection);
 	if (!lane->enterTokens[car->index].valid || 
@@ -77,9 +71,17 @@ void goThroughStopSign(Car* car, StopSign* intersection) {
 		fprintf(stderr, "Car either has not entered a lane or has already exited. "\
 				"@ " __FILE__ " : " LINE_STRING "\n");
 	}
-	int token = intersection->tokenCounter++;
-	initToken(&intersection->tokens[car->index], car, token);
-
+	for (int i = 0; i < quadrantCount; i++) {
+        IntersectionQuad* quad = &intersection->quadrants[quadrants[i]];
+        int token = quad->tokenCounter;
+        initToken(&quad->tokens[car->index], car, token);
+	}
+	nap(1000);
+   	for (int i = 0; i < quadrantCount; i++) {
+   	    IntersectionQuad* quad = &intersection->quadrants[quadrants[i]];
+	    quad->tokenCounter++;
+	}
+	
 	// Mark down that this car is is done travelling through each quadrant.
 	for (int i = 0; i < quadrantCount; i++) {
 		exitMutexAccessValidator(&intersection->quadrants[quadrants[i]].validator, car);
@@ -103,16 +105,15 @@ int getStopSignRequiredQuadrants(Car* car, int* quadrants) {
 		quadrants[0] = 1;
 		quadrants[1] = 0;
 	} else {
-
 		// Should not go here.
 		assert(FALSE);
 	}
-
+	
 	// Now rotate.
 	int rotation = (int)car->position;
 	for (int i = 0; i < quadrantCount; i++) {
 		quadrants[i] = (quadrants[i] + rotation) % DIRECTION_COUNT;
 	}
-
+	
 	return quadrantCount;
 }
