@@ -2,4 +2,5 @@
 *.pdf
 
 commit-msg.txt
+helgrind.txt
 a2/carsim

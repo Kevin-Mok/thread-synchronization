@@ -5,18 +5,21 @@
 * submission code.
 */
 #include "safeStopSign.h"
+#include "stopSign.h"
 #include "intersection.h"
+#include "mutexAccessValidator.h"
 
 void initSafeStopSign(SafeStopSign* sign, int count) {
 	int i;
 	initStopSign(&sign->base, count);
 
-	// TODO: Add any initialization logic you need.
 	for(i = 0; i < DIRECTION_COUNT; i++) {
 		(*sign).car_entering[i] = 0;
 	}
 	(*sign).lane_mutex = (pthread_mutex_t)PTHREAD_MUTEX_INITIALIZER;
 	(*sign).lane_turn = (pthread_cond_t)PTHREAD_COND_INITIALIZER;
+	(*sign).quadrants_mutex = (pthread_mutex_t)PTHREAD_MUTEX_INITIALIZER;
+	(*sign).quadrants_turn = (pthread_cond_t)PTHREAD_COND_INITIALIZER;
 }
 
 void destroySafeStopSign(SafeStopSign* sign) {
@@ -48,9 +51,27 @@ void enterLaneValid(Car* car, SafeStopSign* sign) {
 
 /* }}} enterLaneValid */
 
+int checkIfQuadrantsSafe(Car* car, StopSign* intersection) {
+	int quadrants[QUADRANT_COUNT];
+	int quadrantCount = getStopSignRequiredQuadrants(car, quadrants);
+	MutexAccessValidator curValidator;
+	for (int i = 0; i < quadrantCount; i++) {
+		curValidator = intersection->quadrants[quadrants[i]].validator;
+		pthread_mutex_lock(&curValidator.lock);
+		if (curValidator.current != NULL) {
+			return 0;
+		}
+		pthread_mutex_unlock(&curValidator.lock);
+	}
+	return 1;
+}
+
 void goThroughStopSignValid(Car* car, SafeStopSign* sign) {
-	/* TODO: make sure valid */
-	goThroughStopSign(car, &sign->base);
+	pthread_mutex_lock(&sign->quadrants_mutex);
+	while (checkIfQuadrantsSafe(car, &sign->base) == 0) {
+		pthread_cond_wait(&sign->quadrants_turn, &sign->quadrants_mutex);
+	}
+	/* assume at this point quadrants are free. */
 
 	/* set entering car lane to empty */
 	pthread_mutex_lock(&sign->lane_mutex);
@@ -58,14 +79,17 @@ void goThroughStopSignValid(Car* car, SafeStopSign* sign) {
 	pthread_cond_broadcast(&sign->lane_turn);
 	pthread_mutex_unlock(&sign->lane_mutex);
 
+	/* go through stop sign and broadcast to others to go after */
+	goThroughStopSign(car, &sign->base);
+	pthread_cond_broadcast(&sign->quadrants_turn);
+	pthread_mutex_unlock(&sign->quadrants_mutex);
 }
 
 void runStopSignCar(Car* car, SafeStopSign* sign) {
-
-	// TODO: Add your synchronization logic to this function.
 	enterLaneValid(car, sign);
 
 	goThroughStopSignValid(car, sign);
 
+	/* TODO: ensure exit in same order */
 	exitIntersection(car, getLane(car, &sign->base));
 }

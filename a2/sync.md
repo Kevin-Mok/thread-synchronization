@@ -12,3 +12,8 @@
     - 1 quad in front
 3. exit intersection
   - keep queue of cars entering same
+
+# Light
+1. enter lane
+2. enter intersection
+3. exit intersection

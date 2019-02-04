@@ -25,11 +25,12 @@ typedef struct _SafeStopSign {
 	*/
 	StopSign base;
 
-	// TODO: Add any members you need for synchronization here.
 	/* store which lanes are occupied */
 	int car_entering[DIRECTION_COUNT];
 	pthread_mutex_t lane_mutex;
 	pthread_cond_t lane_turn;
+	pthread_mutex_t quadrants_mutex;
+	pthread_cond_t quadrants_turn;
 
 } SafeStopSign;
 
