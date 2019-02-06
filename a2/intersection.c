@@ -7,6 +7,8 @@
 #include "common.h"
 #include "car.h"
 
+#include "stopSign.h"
+
 void initToken(CarToken* carToken, Car* car, int tokenValue) {
 	assert(!carToken->valid);
 
@@ -30,8 +32,9 @@ void exitIntersection(Car* car, EntryLane* lane) {
 	nap(duration);
 
 	if (!lane->enterTokens[car->index].valid) {
-		fprintf(stderr, "Car did not enter this lane "\
-				"@ " __FILE__ " : " LINE_STRING "\n");
+		fprintf(stderr, "ERROR: Car %d did not enter lane %d @ %s : %s\n",
+				car->index, getLaneIndex(car), __FILE__, LINE_STRING);
+		/* fprintf(stderr, "@ " __FILE__ " : " LINE_STRING "\n"); */
 	}
 
 	// Car must exit in the same order it entered.

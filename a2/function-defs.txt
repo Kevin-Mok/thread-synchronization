@@ -1,1 +1,5 @@
-- enterLane() = intersection.c
+- CarContext = testing.c
+- CarToken = intersection.h
+- enterLane(Car* car, EntryLane* lane) = intersection.c
+- EntryLane = intersection.h
+- getLaneIndex(Car* car) = stopSign.c

@@ -7,6 +7,18 @@
 #include "car.h"
 #include "stopSign.h"
 
+typedef struct _LaneNode {
+	Car* car;
+	struct _LaneNode* next;
+} LaneNode;
+
+typedef struct _LaneQueue {
+	int count;
+	LaneNode* orig_front;
+	LaneNode* cur_front;
+	LaneNode* back;
+} LaneQueue;
+
 /**
 * @brief Structure that you can modify as part of your solution to implement
 * proper synchronization for the stop sign intersection.
@@ -25,13 +37,13 @@ typedef struct _SafeStopSign {
 	*/
 	StopSign base;
 
-	/* store which lanes are occupied */
-	int car_entering[DIRECTION_COUNT];
-	pthread_mutex_t lane_mutex;
-	pthread_cond_t lane_turn;
+	// need mutex, cv and queue for each direction
+	LaneQueue lane_queue[DIRECTION_COUNT];
+	pthread_mutex_t lane_mutex[DIRECTION_COUNT];
+	pthread_cond_t lane_turn[DIRECTION_COUNT];
+
 	pthread_mutex_t quadrants_mutex;
 	pthread_cond_t quadrants_turn;
-
 } SafeStopSign;
 
 /**

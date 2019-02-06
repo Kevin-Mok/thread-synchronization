@@ -1,3 +1,7 @@
+# Errors
+- exit order not preserved
+  - need to add another set of queue/turn for exiting
+
 # Stop
 1. enter lane
   - mutex for lane data
