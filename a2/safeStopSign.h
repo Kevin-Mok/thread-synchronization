@@ -42,11 +42,15 @@ typedef struct _SafeStopSign {/*{{{*/
 
 	// need mutex, cv and queue for each direction
 	LaneQueue lane_queue[DIRECTION_COUNT];
+	// used for mutex of LaneQueue 
 	pthread_mutex_t lane_mutex[DIRECTION_COUNT];
+	// used for waiting for front of LaneQueue
 	pthread_cond_t lane_turn[DIRECTION_COUNT];
 
+	// used for setting/checking quadrants
 	pthread_mutex_t quadrants_mutex;
 	int busy_quadrants[QUADRANT_COUNT];
+	// used for waiting for busy quadrants
 	pthread_cond_t quadrants_turn;
 } SafeStopSign;/*}}}*/
 

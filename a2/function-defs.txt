@@ -2,4 +2,5 @@
 - CarToken = intersection.h
 - enterLane(Car* car, EntryLane* lane) = intersection.c
 - EntryLane = intersection.h
+- exitIntersection = intersection.c
 - getLaneIndex(Car* car) = stopSign.c

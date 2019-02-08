@@ -1,7 +1,8 @@
 # Errors
-- exit order not preserved
-  - need to add another set of queue/turn for exiting
 - test simul. cars going through intersection
+
+## Minor
+- figure out why need lane_turn for stop
 
 # Stop
 1. enter lane

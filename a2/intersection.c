@@ -25,6 +25,7 @@ void enterLane(Car* car, EntryLane* lane) {
 	lane->enterCounter = token + 1;
 
 	initToken(&lane->enterTokens[car->index], car, token);
+	/* printf("Car %d entered Lane %d with token %d.\n", car->index, getLaneIndex(car), token); */
 }
 
 void exitIntersection(Car* car, EntryLane* lane) {
@@ -42,9 +43,16 @@ void exitIntersection(Car* car, EntryLane* lane) {
 	int exitToken = lane->exitCounter++;
 	if (enterToken != exitToken) {
 
-		fprintf(stderr, "Car did not exit in the same order as it entered "\
-				"@ " __FILE__ " : " LINE_STRING "\n");
+		/* fprintf(stderr, "Car did not exit in the same order as it entered "\
+				"@ " __FILE__ " : " LINE_STRING "\n"); */
+		/* fprintf(stderr, "ERROR: Car %d did not exit lane %d in the same order as it entered @ %s : %s", */
+		fprintf(stderr, "ERROR: Car %d did not exit Lane %d in the same order as it entered. ",
+				car->index, getLaneIndex(car));
+		fprintf(stderr, "It had enter token %d and exit token %d.\n",
+				enterToken, exitToken);
 	} else {
 		initToken(&lane->exitTokens[car->index], car, exitToken);
+		/* printf("Car %d exited Lane %d with token %d and had enter token %d.\n",
+				car->index, getLaneIndex(car), exitToken, enterToken); */
 	}
 }

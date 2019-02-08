@@ -113,11 +113,11 @@ void joinAll(CarContext* contexts, int carCount) {
 		}
 		
 		if (i % THREAD_JOIN_REPORT_FREQUENCY == 0) {
-			printf("  First %d threads have joined.\n", i + 1);
+			/* printf("  First %d threads have joined.\n", i + 1); */
 		}
 	}
 
-	printf("  All threads joined\n");
+	/* printf("  All threads joined\n"); */
 }
 
 /**
