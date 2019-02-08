@@ -1,8 +1,7 @@
 # Errors
-- use mutex for safe quadrants
-  - fixes simul. cars going through intersection?
 - exit order not preserved
   - need to add another set of queue/turn for exiting
+- test simul. cars going through intersection
 
 # Stop
 1. enter lane

@@ -45,7 +45,6 @@ void destroySafeStopSign(SafeStopSign* sign) {/*{{{*/
 void addCarToLaneQueue(Car* car, SafeStopSign* sign)/*{{{*/
 {
 	int lane_index = getLaneIndex(car);
-	/* TODO: add car to LaneQueue */
 	/* create LaneNode for current Car */
 	LaneNode* cur_car_node = malloc(sizeof(LaneNode*));
 	cur_car_node->car = malloc(sizeof(Car*));
@@ -81,7 +80,7 @@ void dequeueFront(SafeStopSign* sign, int lane_index)/*{{{*/
 	/* printf("Dequeuing Car %d from Lane %d.\n",
 			cur_front->car->index, lane_index); */
 	/* int* cur_front_token = &getLane(cur_front->car, &sign->base)->enterTokens[cur_front->car->index].valid; */
-	int* cur_front_token = &sign->base.tokens[cur_front->car->index].valid;
+	/* int* cur_front_token = &sign->base.tokens[cur_front->car->index].valid; */
 	/* printf("Car %d has token value %d before dequeuing car.\n",
 			cur_front->car->index, *cur_front_token); */
 	if (cur_lane_queue->count == 1) {
@@ -103,31 +102,13 @@ void dequeueFront(SafeStopSign* sign, int lane_index)/*{{{*/
 	
 	/* }}} old free code */
 	cur_lane_queue->count--;
-	/* printf("Dequeued Car %d from Lane %d. New front is Car %d.\n",
-			cur_front->car->index, lane_index, 
-			cur_lane_queue->cur_front->car->index); */
-	/* printf("Dequeued Car %d from Lane %d.\n", cur_front->car->index, lane_index); */
+	printf("Dequeued Car %d from Lane %d. New count is %d.\n",
+			cur_front->car->index, lane_index,
+			cur_lane_queue->count);
 	/* printf("Car %d has token value %d after dequeuing car.\n",
 			cur_front->car->index, *cur_front_token); */
 	pthread_mutex_unlock(&sign->lane_mutex[lane_index]);
 	/* printf("Cur front token value is %d after freeing.\n", *cur_front_token); */
-}/*}}}*/
-
-int checkIfQuadrantsSafe(Car* car, StopSign* intersection) {/*{{{*/
-	int quadrants[QUADRANT_COUNT];
-	int quadrantCount = getStopSignRequiredQuadrants(car, quadrants);
-	MutexAccessValidator curValidator;
-	for (int i = 0; i < quadrantCount; i++) {
-		curValidator = intersection->quadrants[quadrants[i]].validator;
-		pthread_mutex_lock(&curValidator.lock);
-		if (curValidator.current != NULL) {
-			printf("Not safe for Car %d in Lane %d to make Action %d.\n",
-					car->index, getLaneIndex(car), car->action);
-			return 0;
-		}
-		pthread_mutex_unlock(&curValidator.lock);
-	}
-	return 1;
 }/*}}}*/
 
 void waitForFrontOfQueue(Car* car, SafeStopSign* sign)/*{{{*/
@@ -136,15 +117,39 @@ void waitForFrontOfQueue(Car* car, SafeStopSign* sign)/*{{{*/
 	/* check if car is in front of queue before going through stop sign */
 	pthread_mutex_lock(&sign->lane_mutex[lane_index]);
 	while (sign->lane_queue[lane_index].cur_front->car != car) {
-		/* printf("Waiting for Car %d in Lane %d to be in front. ",
+		printf("Waiting for Car %d in Lane %d to be in front. ",
 				car->index, getLaneIndex(car));
 		printf("Currently %d cars with Car %d in front.\n",
 				sign->lane_queue[lane_index].count,
-				sign->lane_queue[lane_index].cur_front->car->index); */
+				sign->lane_queue[lane_index].cur_front->car->index);
 		pthread_cond_wait(&sign->lane_turn[lane_index],
 				&sign->lane_mutex[lane_index]);
 	}
 	pthread_mutex_unlock(&sign->lane_mutex[lane_index]);
+}/*}}}*/
+
+int checkIfQuadrantsSafe(Car* car, SafeStopSign* sign) {/*{{{*/
+	/* assume if called this function that have quadrants_mutex */
+	int quadrants[QUADRANT_COUNT];
+	int quadrantCount = getStopSignRequiredQuadrants(car, quadrants);
+	for (int i = 0; i < quadrantCount; i++) {
+		if (sign->busy_quadrants[quadrants[i]] == 1) { 
+			printf("Not safe for Car %d in Lane %d to make Action %d.\n",
+					car->index, getLaneIndex(car), car->action);
+			return 0;
+		}
+	}
+	return 1;
+}/*}}}*/
+
+void setCarQuadrants(Car* car, SafeStopSign* sign, int value) {/*{{{*/
+	/* assume if called this function that have quadrants_mutex */
+	int quadrants[QUADRANT_COUNT];
+	int quadrantCount = getStopSignRequiredQuadrants(car, quadrants);
+	/* printf("Setting Car %d quadrants to %d.\n", car->index, value); */
+	for (int i = 0; i < quadrantCount; i++) {
+		sign->busy_quadrants[quadrants[i]] = value;
+	}
 }/*}}}*/
 
 void goThroughStopSignValid(Car* car, SafeStopSign* sign) {/*{{{*/
@@ -158,28 +163,32 @@ void goThroughStopSignValid(Car* car, SafeStopSign* sign) {/*{{{*/
 
 	/* TODO: forcing cars to go through stop sign one at a time right now with
 	 * the mutex */
+	/* TODO: fix checking safe quads */
 	pthread_mutex_lock(&sign->quadrants_mutex);
-	while (checkIfQuadrantsSafe(car, &sign->base) == 0) {
+	while (checkIfQuadrantsSafe(car, sign) == 0) {
 		pthread_cond_wait(&sign->quadrants_turn, &sign->quadrants_mutex);
 	}
 	/* assume at this point quadrants are free. */
+	setCarQuadrants(car, sign, 1);
 
 	/* go through stop sign and broadcast to others to go after */
 	/* printf("Car %d entering Lane %d and has token value %d.\n", car->index,
 			getLaneIndex(car),
 			getLane(car, &sign->base)->enterTokens[car->index].valid); */
 	goThroughStopSign(car, &sign->base);
+
+	setCarQuadrants(car, sign, 0);
 	/* printf("Car %d went through Lane %d and has token value %d.\n", car->index,
 			getLaneIndex(car),
 			getLane(car, &sign->base)->enterTokens[car->index].valid); */
 	pthread_cond_broadcast(&sign->quadrants_turn);
+	pthread_mutex_unlock(&sign->quadrants_mutex);
 	dequeueFront(sign, lane_index);
 	/* printf("Car %d dequeued from Lane %d and has token value %d.\n", car->index,
 			getLaneIndex(car),
 			getLane(car, &sign->base)->enterTokens[car->index].valid); */
 	printf("Car %d dequeued from Lane %d.\n", car->index, getLaneIndex(car));
 	pthread_cond_broadcast(&sign->lane_turn[lane_index]);
-	pthread_mutex_unlock(&sign->quadrants_mutex);
 }/*}}}*/
 
 void runStopSignCar(Car* car, SafeStopSign* sign) {/*{{{*/
@@ -190,8 +199,6 @@ void runStopSignCar(Car* car, SafeStopSign* sign) {/*{{{*/
 			getLaneIndex(car),
 			getLane(car, &sign->base)->enterTokens[car->index].valid); */
 
-	/* TODO: check if their turn to enter intersection (i.e. front of
-	 * LaneQueue) */
 	goThroughStopSignValid(car, sign);
 
 	exitIntersection(car, getLane(car, &sign->base));
