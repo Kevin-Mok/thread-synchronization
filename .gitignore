@@ -1,6 +1,7 @@
 *.o
 *.pdf
 
+a2/carsim
+order.md
 commit-msg.txt
 helgrind.txt
-a2/carsim

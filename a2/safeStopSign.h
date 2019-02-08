@@ -43,6 +43,7 @@ typedef struct _SafeStopSign {
 	pthread_cond_t lane_turn[DIRECTION_COUNT];
 
 	pthread_mutex_t quadrants_mutex;
+	int busy_quadrants[QUADRANT_COUNT];
 	pthread_cond_t quadrants_turn;
 } SafeStopSign;
 

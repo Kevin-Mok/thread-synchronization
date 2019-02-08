@@ -1,37 +1,30 @@
-/**
-* CSC369 Assignment 2
-*
-* This is the source/implementation file for your safe stop sign
-* submission code.
-*/
-/* include {{{ */
-
-#include "safeStopSign.h"
+#include "safeStopSign.h"/*{{{*/
 #include "stopSign.h"
 #include "intersection.h"
-#include "mutexAccessValidator.h"
+#include "mutexAccessValidator.h"/*}}}*/
 
-/* }}} include */
-
-void initSafeStopSign(SafeStopSign* sign, int count) {
+void initSafeStopSign(SafeStopSign* sign, int count) {/*{{{*/
 	int i;
 	initStopSign(&sign->base, count);
 
 	for(i = 0; i < DIRECTION_COUNT; i++) {
-		(*sign).lane_queue[i].count = 0;
-		(*sign).lane_queue[i].orig_front = malloc(sizeof(LaneNode));
-		(*sign).lane_queue[i].cur_front = malloc(sizeof(LaneNode));
-		(*sign).lane_queue[i].back = malloc(sizeof(LaneNode));
-		(*sign).lane_mutex[i] = (pthread_mutex_t)PTHREAD_MUTEX_INITIALIZER;
-		(*sign).lane_turn[i] = (pthread_cond_t)PTHREAD_COND_INITIALIZER;
+		/* init LaneQueue */
+		sign->lane_queue[i].count = 0;
+		sign->lane_queue[i].orig_front = malloc(sizeof(LaneNode));
+		sign->lane_queue[i].cur_front = malloc(sizeof(LaneNode));
+		sign->lane_queue[i].back = malloc(sizeof(LaneNode));
+
+		sign->lane_mutex[i] = (pthread_mutex_t)PTHREAD_MUTEX_INITIALIZER;
+		sign->lane_turn[i] = (pthread_cond_t)PTHREAD_COND_INITIALIZER;
 	}
-	(*sign).quadrants_mutex = (pthread_mutex_t)PTHREAD_MUTEX_INITIALIZER;
-	(*sign).quadrants_turn = (pthread_cond_t)PTHREAD_COND_INITIALIZER;
-}
+	sign->quadrants_mutex = (pthread_mutex_t)PTHREAD_MUTEX_INITIALIZER;
+	sign->quadrants_turn = (pthread_cond_t)PTHREAD_COND_INITIALIZER;
+	for (i = 0; i < 4; i++) {
+		sign->busy_quadrants[i] = 0;
+	}
+}/*}}}*/
 
-/* destroySafeStopSign {{{ */
-
-void destroySafeStopSign(SafeStopSign* sign) {
+void destroySafeStopSign(SafeStopSign* sign) {/*{{{*/
 	destroyStopSign(&sign->base);
 
 	// TODO: Add any logic you need to clean up data structures.
@@ -47,11 +40,9 @@ void destroySafeStopSign(SafeStopSign* sign) {
 			free(cur_front);
 		}
 	} */
-}
+}/*}}}*/
 
-/* }}}  destroySafeStopSign */
-
-void addCarToLaneQueue(Car* car, SafeStopSign* sign)
+void addCarToLaneQueue(Car* car, SafeStopSign* sign)/*{{{*/
 {
 	int lane_index = getLaneIndex(car);
 	/* TODO: add car to LaneQueue */
@@ -76,9 +67,9 @@ void addCarToLaneQueue(Car* car, SafeStopSign* sign)
 	printf("Added car %d to LaneQueue %d at pos %d.\n", car->index, lane_index,
 			cur_lane_queue->count - 1);
 	pthread_mutex_unlock(&sign->lane_mutex[lane_index]);
-}
+}/*}}}*/
 
-void dequeueFront(SafeStopSign* sign, int lane_index)
+void dequeueFront(SafeStopSign* sign, int lane_index)/*{{{*/
 {
 	LaneQueue* cur_lane_queue = &sign->lane_queue[lane_index];
 
@@ -99,6 +90,8 @@ void dequeueFront(SafeStopSign* sign, int lane_index)
 	} else {
 		cur_lane_queue->cur_front = cur_lane_queue->cur_front->next;
 	}
+	/* old free code {{{ */
+	
 	/* printf("Dequeuing and freeing Car %d.\n", cur_front->car->index); */
 	/* printf("Car %d has token value is %d before freeing car.\n",
 			, *cur_front_token); */
@@ -107,6 +100,8 @@ void dequeueFront(SafeStopSign* sign, int lane_index)
 	free(cur_front->next);
 	printf("Freeing front.\n");
 	free(cur_front); */
+	
+	/* }}} old free code */
 	cur_lane_queue->count--;
 	/* printf("Dequeued Car %d from Lane %d. New front is Car %d.\n",
 			cur_front->car->index, lane_index, 
@@ -116,13 +111,9 @@ void dequeueFront(SafeStopSign* sign, int lane_index)
 			cur_front->car->index, *cur_front_token); */
 	pthread_mutex_unlock(&sign->lane_mutex[lane_index]);
 	/* printf("Cur front token value is %d after freeing.\n", *cur_front_token); */
-}
+}/*}}}*/
 
-/* TODO: setup queue for entering lane */
-
-/* checkIfQuadrantsSafe {{{ */
-
-int checkIfQuadrantsSafe(Car* car, StopSign* intersection) {
+int checkIfQuadrantsSafe(Car* car, StopSign* intersection) {/*{{{*/
 	int quadrants[QUADRANT_COUNT];
 	int quadrantCount = getStopSignRequiredQuadrants(car, quadrants);
 	MutexAccessValidator curValidator;
@@ -137,11 +128,9 @@ int checkIfQuadrantsSafe(Car* car, StopSign* intersection) {
 		pthread_mutex_unlock(&curValidator.lock);
 	}
 	return 1;
-}
+}/*}}}*/
 
-/* }}} checkIfQuadrantsSafe */
-
-void waitForFrontOfQueue(Car* car, SafeStopSign* sign)
+void waitForFrontOfQueue(Car* car, SafeStopSign* sign)/*{{{*/
 {
 	int lane_index = getLaneIndex(car);
 	/* check if car is in front of queue before going through stop sign */
@@ -156,11 +145,9 @@ void waitForFrontOfQueue(Car* car, SafeStopSign* sign)
 				&sign->lane_mutex[lane_index]);
 	}
 	pthread_mutex_unlock(&sign->lane_mutex[lane_index]);
-}
+}/*}}}*/
 
-/* goThroughStopSignValid {{{ */
-
-void goThroughStopSignValid(Car* car, SafeStopSign* sign) {
+void goThroughStopSignValid(Car* car, SafeStopSign* sign) {/*{{{*/
 	int lane_index = getLaneIndex(car);
 	waitForFrontOfQueue(car, sign);
 	/* set entering car lane to empty */
@@ -193,13 +180,9 @@ void goThroughStopSignValid(Car* car, SafeStopSign* sign) {
 	printf("Car %d dequeued from Lane %d.\n", car->index, getLaneIndex(car));
 	pthread_cond_broadcast(&sign->lane_turn[lane_index]);
 	pthread_mutex_unlock(&sign->quadrants_mutex);
-}
+}/*}}}*/
 
-/* }}} goThroughStopSignValid */
-
-/* runStopSignCar {{{ */
-
-void runStopSignCar(Car* car, SafeStopSign* sign) {
+void runStopSignCar(Car* car, SafeStopSign* sign) {/*{{{*/
 	/* enterLaneValid(car, sign); */
 	addCarToLaneQueue(car, sign);
 	enterLane(car, getLane(car, &sign->base));
@@ -212,14 +195,10 @@ void runStopSignCar(Car* car, SafeStopSign* sign) {
 	goThroughStopSignValid(car, sign);
 
 	exitIntersection(car, getLane(car, &sign->base));
-}
+}/*}}}*/
 
-/* }}} runStopSignCar */
-
-/* OLD/DEPRECATED - enter lane when possible */
-/* enterLaneValid {{{ */
-
-/* void enterLaneValid(Car* car, SafeStopSign* sign) {
+/* OLD/DEPRECATED */
+/* void enterLaneValid(Car* car, SafeStopSign* sign) {{{{
 	int car_lane_index; 
 
 	pthread_mutex_lock(&sign->lane_mutex);
@@ -235,7 +214,4 @@ void runStopSignCar(Car* car, SafeStopSign* sign) {
 	[>allow other cars to try and enter lanes<]
 	pthread_cond_broadcast(&sign->lane_turn);
 	pthread_mutex_unlock(&sign->lane_mutex);
-} */
-
-/* }}} enterLaneValid */
-
+} *//*}}}*/
