@@ -1,5 +1,7 @@
-# Errors
+# To-Do
 - test simul. cars going through intersection
+- ask about helgrind msgs
+- add fxn def's in stop
 
 # Stop
 1. enter lane

@@ -205,15 +205,12 @@ void exitIntersectionValid(Car* car, SafeStopSign* sign)/*{{{*/
 }/*}}}*/
 
 void runStopSignCar(Car* car, SafeStopSign* sign) {/*{{{*/
-	/* enterLaneValid(car, sign); */
 	addCarToLaneQueue(car, sign);
-	/* enterLane(car, getLane(car, &sign->base)); */
 	/* printf("Car %d entered Lane %d and has token value %d.\n", car->index,
 			getLaneIndex(car),
 			getLane(car, &sign->base)->enterTokens[car->index].valid); */
 
 	goThroughStopSignValid(car, sign);
 
-	/* exitIntersection(car, getLane(car, &sign->base)); */
 	exitIntersectionValid(car, sign);
 }/*}}}*/

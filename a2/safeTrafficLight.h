@@ -1,11 +1,22 @@
 #pragma once
-/**
-* CSC369 Assignment 2
-*
-* This is the header file for your safe traffic light submission code.
-*/
 #include "car.h"
 #include "trafficLight.h"
+#include "safeStopSign.h"
+
+// imported from safeStopSign.h
+/* typedef struct _LaneNode {
+	Car* car;
+	struct _LaneNode* next;
+} LaneNode;
+
+typedef struct _LaneQueue {
+	int count;
+	LaneNode* orig_front;
+	LaneNode* cur_front;
+	LaneNode* back;
+} LaneQueue; */
+
+/* SafeTrafficLight instr. {{{ */
 
 /**
 * @brief Structure that you can modify as part of your solution to implement
@@ -14,8 +25,12 @@
 * This is basically a wrapper around TrafficLight, since you are not allowed to 
 * modify or directly access members of TrafficLight.
 */
+
+/* }}} SafeTrafficLight instr. */
 typedef struct _SafeTrafficLight {
 
+	/* instr. {{{ */
+	
 	/**
 	* @brief The underlying light.
 	*
@@ -23,10 +38,15 @@ typedef struct _SafeTrafficLight {
 	* access its members. All interactions must be done through the functions
 	* you have been provided.
 	*/
+	
+	/* }}} instr. */
 	TrafficLight base;
 
 	// TODO: Add any members you need for synchronization here.
-
+	// need mutex and queue for each direction
+	LaneQueue lane_queue[TRAFFIC_LIGHT_LANE_COUNT];
+	// used for mutex of LaneQueue 
+	pthread_mutex_t lane_mutex[TRAFFIC_LIGHT_LANE_COUNT];
 } SafeTrafficLight;
 
 /**
