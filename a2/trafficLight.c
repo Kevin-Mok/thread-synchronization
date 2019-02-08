@@ -6,7 +6,7 @@
 #include "trafficLight.h"
 #include "common.h"
 
-void initTrafficLight(TrafficLight* light, int eastWest, int northSouth) {
+void initTrafficLight(TrafficLight* light, int eastWest, int northSouth) {/*{{{*/
 
 	// Initialize lanes.
 	int carCount = eastWest + northSouth;
@@ -56,9 +56,9 @@ void initTrafficLight(TrafficLight* light, int eastWest, int northSouth) {
 	for (int i = 0; i < DIRECTION_COUNT; i++) {
 		light->straightCounts[i] = 0;	
 	}
-}
+}/*}}}*/
 
-void destroyTrafficLight(TrafficLight* light) {
+void destroyTrafficLight(TrafficLight* light) {/*{{{*/
 
 	// Free lanes.
 	for (int i = 0; i < DIRECTION_COUNT; i++) {
@@ -69,18 +69,18 @@ void destroyTrafficLight(TrafficLight* light) {
 	pthread_mutex_destroy(&light->validationLock);
 	
 	free(light->tokens);
-}
+}/*}}}*/
 
-int getLaneIndexLight(Car* car) {
+int getLaneIndexLight(Car* car) {/*{{{*/
 	return car->position * 3 + car->action;
-}
+}/*}}}*/
 
-EntryLane* getLaneLight(Car* car, TrafficLight* intersection) {
+EntryLane* getLaneLight(Car* car, TrafficLight* intersection) {/*{{{*/
 	int laneIndex = getLaneIndexLight(car);
 	return &intersection->entryLanes[laneIndex];
-}
+}/*}}}*/
 
-void enterTrafficLight(Car* car, TrafficLight* intersection) {
+void enterTrafficLight(Car* car, TrafficLight* intersection) {/*{{{*/
 
 	// Validate and set internal counters.
 	{
@@ -139,9 +139,9 @@ void enterTrafficLight(Car* car, TrafficLight* intersection) {
 		intersection->currentMode = RED;
 	}
 	intersection->carsInside++;
-}
+}/*}}}*/
 
-void actTrafficLight(Car* car, TrafficLight* intersection,
+void actTrafficLight(Car* car, TrafficLight* intersection,/*{{{*/
 		IntersectionCallback beforeSleep, IntersectionCallback afterSleep,
 		void* userPtr) {
 
@@ -237,17 +237,17 @@ void actTrafficLight(Car* car, TrafficLight* intersection,
 		unlock(&intersection->validationLock);
 	}
 
-}
+}/*}}}*/
 
-LightState getOppositeDirection(LightState mode) {
+LightState getOppositeDirection(LightState mode) {/*{{{*/
 	assert(mode != RED);
 	return (LightState)(1 - (int)mode);
-}
+}/*}}}*/
 
-LightState getLightState(TrafficLight* light) {
+LightState getLightState(TrafficLight* light) {/*{{{*/
 	return light->currentMode;
-}
+}/*}}}*/
 
-int getStraightCount(TrafficLight* light, int position) {
+int getStraightCount(TrafficLight* light, int position) {/*{{{*/
 	return light->straightCounts[position];
-}
+}/*}}}*/

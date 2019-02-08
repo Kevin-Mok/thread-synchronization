@@ -47,6 +47,12 @@ typedef struct _SafeTrafficLight {
 	LaneQueue lane_queue[TRAFFIC_LIGHT_LANE_COUNT];
 	// used for mutex of LaneQueue 
 	pthread_mutex_t lane_mutex[TRAFFIC_LIGHT_LANE_COUNT];
+	// need lane_turn for light bc. each lane is pretty individ. vs. stop
+	pthread_cond_t lane_turn[TRAFFIC_LIGHT_LANE_COUNT];
+
+	// used for checking light status
+	pthread_mutex_t light_mutex;
+	pthread_cond_t light_turn;
 } SafeTrafficLight;
 
 /**
