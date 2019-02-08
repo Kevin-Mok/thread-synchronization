@@ -15,7 +15,7 @@ void initSafeStopSign(SafeStopSign* sign, int count) {/*{{{*/
 		sign->lane_queue[i].back = malloc(sizeof(LaneNode));
 
 		sign->lane_mutex[i] = (pthread_mutex_t)PTHREAD_MUTEX_INITIALIZER;
-		sign->lane_turn[i] = (pthread_cond_t)PTHREAD_COND_INITIALIZER;
+		/* sign->lane_turn[i] = (pthread_cond_t)PTHREAD_COND_INITIALIZER; */
 	}
 	sign->quadrants_mutex = (pthread_mutex_t)PTHREAD_MUTEX_INITIALIZER;
 	sign->quadrants_turn = (pthread_cond_t)PTHREAD_COND_INITIALIZER;
@@ -123,10 +123,10 @@ void waitForFrontOfQueue(Car* car, SafeStopSign* sign)/*{{{*/
 		printf("Currently %d cars with Car %d in front.\n",
 				sign->lane_queue[lane_index].count,
 				sign->lane_queue[lane_index].cur_front->car->index); */
-		pthread_cond_wait(&sign->lane_turn[lane_index],
-				&sign->lane_mutex[lane_index]);
-		/* pthread_cond_wait(&sign->quadrants_turn,
+		/* pthread_cond_wait(&sign->lane_turn[lane_index],
 				&sign->lane_mutex[lane_index]); */
+		pthread_cond_wait(&sign->quadrants_turn,
+				&sign->lane_mutex[lane_index]);
 	}
 	pthread_mutex_unlock(&sign->lane_mutex[lane_index]);
 }/*}}}*/
@@ -201,8 +201,7 @@ void exitIntersectionValid(Car* car, SafeStopSign* sign)/*{{{*/
 	 * or quadrants being busy */
 	pthread_cond_broadcast(&sign->quadrants_turn);
 
-	/* TODO: get rid of lane_turn? */
-	pthread_cond_broadcast(&sign->lane_turn[lane_index]);
+	/* pthread_cond_broadcast(&sign->lane_turn[lane_index]); */
 }/*}}}*/
 
 void runStopSignCar(Car* car, SafeStopSign* sign) {/*{{{*/

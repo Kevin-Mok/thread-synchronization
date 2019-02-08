@@ -1,9 +1,6 @@
 # Errors
 - test simul. cars going through intersection
 
-## Minor
-- figure out why need lane_turn for stop
-
 # Stop
 1. enter lane
   - mutex for lane data
