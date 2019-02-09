@@ -1,4 +1,7 @@
 # To-Do
+## Errors
+
+## Minor
 - test simul. cars going through intersection
 - ask about helgrind msgs
 - add fxn def's in stop
