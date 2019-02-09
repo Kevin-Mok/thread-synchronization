@@ -89,18 +89,19 @@ void enterTrafficLight(Car* car, TrafficLight* intersection) {/*{{{*/
 		// Validate that the light is green for the car.
 		if ((car->position == EAST || car->position == WEST) &&
 				intersection->currentMode != EAST_WEST) {
-			fprintf(stderr, "Car from east or west attempted to enter intersection "\
-				"not in east-west mode."\
-				"@ " __FILE__ " : " LINE_STRING "\n");
+			fprintf(stderr, "Car %d in Lane %d attempted to enter intersection not in E/W mode. @ %s : %s\n",
+					car->index, getLaneIndexLight(car), __FILE__, LINE_STRING);
 
 			// Important that we release the lock before we return.
 			unlock(&intersection->validationLock);
 			return;
 		} else if ((car->position == NORTH || car->position == SOUTH) &&
 				intersection->currentMode != NORTH_SOUTH) {
-			fprintf(stderr, "Car from north or south attempted to enter intersection "\
+			fprintf(stderr, "Car %d in Lane %d attempted to enter intersection not in N/S mode. @ %s : %s\n",
+					car->index, getLaneIndexLight(car), __FILE__, LINE_STRING);
+			/* fprintf(stderr, "Car from north or south attempted to enter intersection "\
 					"not in north-south mode."\
-					"@ " __FILE__ " : " LINE_STRING "\n");
+					"@ " __FILE__ " : " LINE_STRING "\n"); */
 			unlock(&intersection->validationLock);
 			return;
 		}
@@ -200,6 +201,8 @@ void actTrafficLight(Car* car, TrafficLight* intersection,/*{{{*/
 	// of cars still in the intersection and that need to clear it before
 	// the traffic light lets the next direction go.
 	intersection->carsInside--;
+	printf("%d cars in intersection before assertion @ %s : %s.\n",
+			intersection->carsInside, __FILE__, LINE_STRING);
 	assert(intersection->carsInside >= 0);
 	
 	// When this is red (for both sides) and there are no cars inside, we

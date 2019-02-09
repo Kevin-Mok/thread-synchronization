@@ -42,7 +42,7 @@ typedef enum _LightState {
 /**
 * @brief Intersection controlled by a traffic light.
 */
-typedef struct _TrafficLight {
+typedef struct _TrafficLight {/*{{{*/
 
 	/**
 	* @brief Lanes that a car enters from.
@@ -130,7 +130,7 @@ typedef struct _TrafficLight {
 	*/
 	int straightCounts[DIRECTION_COUNT];
 
-} TrafficLight;
+} TrafficLight;/*}}}*/
 
 /**
 * @brief Initialize a traffic light.

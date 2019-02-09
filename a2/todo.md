@@ -1,5 +1,10 @@
 # To-Do
 ## Errors
+- neg. cars in intersection
+  - exiting not decreasing carsLeft properly
+- entering from wrong dir. car not in
+- hanging
+  - at red since wrong # cars in intersection?
 
 ## Minor
 - test simul. cars going through intersection
