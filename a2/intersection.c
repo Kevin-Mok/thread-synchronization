@@ -8,6 +8,7 @@
 #include "car.h"
 
 #include "stopSign.h"
+#include "trafficLight.h"
 
 void initToken(CarToken* carToken, Car* car, int tokenValue) {
 	assert(!carToken->valid);
@@ -24,8 +25,10 @@ void enterLane(Car* car, EntryLane* lane) {
 	nap(duration);
 	lane->enterCounter = token + 1;
 
+	/* printf("Car %d entering Lane %d with token %d.\n", 
+			car->index, getLaneIndexLight(car), 
+			lane->enterTokens[car->index].valid); */
 	initToken(&lane->enterTokens[car->index], car, token);
-	/* printf("Car %d entered Lane %d with token %d.\n", car->index, getLaneIndex(car), token); */
 }
 
 void exitIntersection(Car* car, EntryLane* lane) {

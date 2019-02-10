@@ -89,16 +89,18 @@ void enterTrafficLight(Car* car, TrafficLight* intersection) {/*{{{*/
 		// Validate that the light is green for the car.
 		if ((car->position == EAST || car->position == WEST) &&
 				intersection->currentMode != EAST_WEST) {
-			fprintf(stderr, "Car %d in Lane %d attempted to enter intersection not in E/W mode. @ %s : %s\n",
-					car->index, getLaneIndexLight(car), __FILE__, LINE_STRING);
+			fprintf(stderr, "Car %d in Lane %d attempted to enter intersection while Light is %d. @ %s : %s\n",
+					car->index, getLaneIndexLight(car), 
+					getLightState(intersection), __FILE__, LINE_STRING);
 
 			// Important that we release the lock before we return.
 			unlock(&intersection->validationLock);
 			return;
 		} else if ((car->position == NORTH || car->position == SOUTH) &&
 				intersection->currentMode != NORTH_SOUTH) {
-			fprintf(stderr, "Car %d in Lane %d attempted to enter intersection not in N/S mode. @ %s : %s\n",
-					car->index, getLaneIndexLight(car), __FILE__, LINE_STRING);
+			fprintf(stderr, "Car %d in Lane %d attempted to enter intersection while Light is %d. @ %s : %s\n",
+					car->index, getLaneIndexLight(car),
+					getLightState(intersection), __FILE__, LINE_STRING);
 			/* fprintf(stderr, "Car from north or south attempted to enter intersection "\
 					"not in north-south mode."\
 					"@ " __FILE__ " : " LINE_STRING "\n"); */

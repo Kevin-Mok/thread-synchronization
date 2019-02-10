@@ -89,19 +89,23 @@ int getDirNum(Car* car) {/*{{{*/
 void waitForOppStraight(Car* car, SafeTrafficLight* light) {/*{{{*/
 	CarPosition opp_dir = getOppositePosition(car->position);
 	/* based on given CarAction values */
-	int opp_straight_lane = opp_dir * 3;
+	/* int opp_straight_lane = opp_dir * 3; */
 
 	/* sync by getting opp. lane_mutex so can broadcast from it when done */
-	pthread_mutex_lock(&light->lane_mutex[opp_straight_lane]);
+	/* pthread_mutex_lock(&light->lane_mutex[opp_straight_lane]); */
+
+	/* changed putting this function into waitForLight so already have light_mutex */
+	/* pthread_mutex_lock(&light->light_mutex); */
 	while (getStraightCount(&light->base, opp_dir) != 0) {
 		/* printf("Waiting for left for Car %d in Lane %d. %d straight cars in opp. lane %d.\n",
 				car->index, getLaneIndex(car), 
 				getStraightCount(&light->base, opp_dir),
 				opp_straight_lane); */
 		/* pthread_cond_wait(&light->lane_turn[opp_straight_lane], &light->lane_mutex[opp_straight_lane]); */
-		pthread_cond_wait(&light->light_turn, &light->lane_mutex[opp_straight_lane]);
+		pthread_cond_wait(&light->light_turn, &light->light_mutex);
 	}
-	pthread_mutex_unlock(&light->lane_mutex[opp_straight_lane]);
+	/* pthread_mutex_unlock(&light->lane_mutex[opp_straight_lane]); */
+	/* pthread_mutex_unlock(&light->light_mutex); */
 }/*}}}*/
 
 void waitForLight(Car* car, SafeTrafficLight* light) {/*{{{*/
@@ -113,6 +117,17 @@ void waitForLight(Car* car, SafeTrafficLight* light) {/*{{{*/
 				getLightState(&light->base), car->index, getLaneIndex(car)); */
 		pthread_cond_wait(&light->light_turn, &light->light_mutex);
 	}
+	/* printf("Car %d attempting to enter Lane %d while Light is %d.\n", 
+			car->index, getLaneIndexLight(car), getLightState(&light->base)); */
+	/* printf("Car %d entering Lane %d while Light is %d.\n",
+			car->index, getLaneIndexLight(car), getLightState(&light->base)); */
+	enterTrafficLight(car, &light->base);
+	if (car->action == LEFT_TURN) {
+		while (getStraightCount(&light->base, getOppositePosition(car->position)) != 0) {
+			pthread_cond_wait(&light->light_turn, &light->light_mutex);
+		}
+	}
+	actTrafficLight(car, &light->base, NULL, NULL, NULL);
 	pthread_mutex_unlock(&light->light_mutex);
 }/*}}}*/
 
@@ -120,12 +135,11 @@ void enterTrafficLightValid(Car* car, SafeTrafficLight* light) {/*{{{*/
 	waitForFrontLight(car, light);
 	waitForLight(car, light);
 
-	/* printf("Car %d entering Lane %d and has token value %d.\n", car->index,
-			getLaneIndex(car),
-			getLane(car, &light->base)->enterTokens[car->index].valid); */
-	pthread_mutex_lock(&light->light_mutex);
-	enterTrafficLight(car, &light->base);
-	pthread_mutex_unlock(&light->light_mutex);
+	/* pthread_mutex_lock(&light->light_mutex); */
+	/* printf("Car %d entering Lane %d while Light is %d.\n", 
+			car->index, getLaneIndexLight(car), getLightState(&light->base)); */
+	/* enterTrafficLight(car, &light->base);
+	pthread_mutex_unlock(&light->light_mutex); */
 }/*}}}*/
 
 void actTrafficLightValid(Car* car, SafeTrafficLight* light)/*{{{*/
@@ -159,7 +173,7 @@ void dequeueFrontLight(SafeTrafficLight* light, int lane_index)/*{{{*/
 			cur_front->car->index, lane_index,
 			cur_lane_queue->count); */
 	/* pthread_cond_broadcast(&light->lane_turn[lane_index]); */
-	pthread_cond_broadcast(&light->light_turn);
+	/* pthread_cond_broadcast(&light->light_turn); */
 	pthread_mutex_unlock(&light->lane_mutex[lane_index]);
 }/*}}}*/
 
@@ -185,7 +199,7 @@ void runTrafficLightCar(Car* car, SafeTrafficLight* light) {/*{{{*/
 	/* Enter and act are separate calls because a car turning left can first
 	enter the intersection before it needs to check for oncoming traffic. */
 	enterTrafficLightValid(car, light);
-	actTrafficLightValid(car, light);
+	/* actTrafficLightValid(car, light); */
 
 	exitIntersectionLightValid(car, light);
 }/*}}}*/
