@@ -201,8 +201,8 @@ void actTrafficLight(Car* car, TrafficLight* intersection,/*{{{*/
 	// of cars still in the intersection and that need to clear it before
 	// the traffic light lets the next direction go.
 	intersection->carsInside--;
-	printf("%d cars in intersection before assertion @ %s : %s.\n",
-			intersection->carsInside, __FILE__, LINE_STRING);
+	/* printf("%d cars in intersection before assertion @ %s : %s.\n",
+			intersection->carsInside, __FILE__, LINE_STRING); */
 	assert(intersection->carsInside >= 0);
 	
 	// When this is red (for both sides) and there are no cars inside, we

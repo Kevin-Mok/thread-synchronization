@@ -1,5 +1,7 @@
 *.o
 *.pdf
+*.json
+vgcore.*
 
 a2/carsim
 order.md
