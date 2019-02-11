@@ -1,16 +1,13 @@
 # To-Do
-- give up universal mutex after each step
-  - test simul. cars going through intersection
- 
-## Errors
-
-## Minor
-- ask
-  - about helgrind msgs
-  - simul. cars in intersection
-    - how often to give up universal mutex?
+- freeing mem
 - add fxn def's
+- clean up code
 - test fresh clone
+ 
+## Minor
+- ask about helgrind msgs
+
+## Errors
 
 
 

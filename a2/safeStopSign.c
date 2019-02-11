@@ -133,10 +133,10 @@ void waitForFrontOfQueue(Car* car, SafeStopSign* sign)/*{{{*/
 
 int checkIfQuadrantsSafe(Car* car, SafeStopSign* sign) {/*{{{*/
 	/* assume if called this function that have quadrants_mutex */
-	int quadrants[QUADRANT_COUNT];
-	int quadrantCount = getStopSignRequiredQuadrants(car, quadrants);
+	int carQuadrants[QUADRANT_COUNT];
+	int quadrantCount = getStopSignRequiredQuadrants(car, carQuadrants);
 	for (int i = 0; i < quadrantCount; i++) {
-		if (sign->busy_quadrants[quadrants[i]] == 1) { 
+		if (sign->busy_quadrants[carQuadrants[i]] == 1) { 
 			/* printf("Not safe for Car %d in Lane %d to make Action %d.\n",
 					car->index, getLaneIndex(car), car->action); */
 			return 0;
@@ -147,12 +147,48 @@ int checkIfQuadrantsSafe(Car* car, SafeStopSign* sign) {/*{{{*/
 
 void setCarQuadrants(Car* car, SafeStopSign* sign, int value) {/*{{{*/
 	/* assume if called this function that have quadrants_mutex */
-	int quadrants[QUADRANT_COUNT];
-	int quadrantCount = getStopSignRequiredQuadrants(car, quadrants);
+	int i;
+	int carQuadrants[QUADRANT_COUNT];
+	int quadrantCount = getStopSignRequiredQuadrants(car, carQuadrants);
 	/* printf("Setting Car %d quadrants to %d.\n", car->index, value); */
-	for (int i = 0; i < quadrantCount; i++) {
-		sign->busy_quadrants[quadrants[i]] = value;
+	for (i = 0; i < quadrantCount; i++) {
+		sign->busy_quadrants[carQuadrants[i]] = value;
 	}
+
+	/* check if simul. cars in intersection  {{{ */
+	
+	/* if (value == 1) {
+		int j;
+		for (i = 0; i < QUADRANT_COUNT; i++) { */
+			/* old {{{ */
+			
+			/* match = 0;
+			if (sign->busy_quadrants[carQuadrants[i]] == 1) {
+				for (j = 0; j < quadrantCount; j++) {
+					if (i == carQuadrants[j]) {
+						match = 1;
+						break;
+					}
+				}
+				if (match == 0) {
+					printf("Simul. cars in intersection: Car %d taking Action %d but Quadrant %d \n");
+					break;
+				}
+			} */
+			
+			/* }}} old */
+			/* printf("%d", sign->busy_quadrants[i]);
+			for (j = 0; j < quadrantCount; j++) {
+				if (carQuadrants[j] == i) {
+					printf("C");
+				}
+			}
+			printf(" | ");
+		}
+		printf("\n");
+	} */
+	
+	/* }}} check if simul. cars in intersection  */
 }/*}}}*/
 
 void goThroughStopSignValid(Car* car, SafeStopSign* sign) {/*{{{*/

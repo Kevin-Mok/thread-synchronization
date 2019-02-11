@@ -1,19 +1,23 @@
+/* include {{{ */
+
 #pragma once
 
 #include "car.h"
 #include "stopSign.h"
 
-typedef struct _LaneNode {
+/* }}} include */
+
+typedef struct _LaneNode {/*{{{*/
 	Car* car;
 	struct _LaneNode* next;
-} LaneNode;
+} LaneNode;/*}}}*/
 
-typedef struct _LaneQueue {
+typedef struct _LaneQueue {/*{{{*/
 	int count;
 	LaneNode* orig_front;
 	LaneNode* cur_front;
 	LaneNode* back;
-} LaneQueue;
+} LaneQueue;/*}}}*/
 
 /* SafeStopSign descr. {{{ */
 
