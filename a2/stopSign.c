@@ -94,16 +94,16 @@ int getStopSignRequiredQuadrants(Car* car, int* quadrants) {
 	int quadrantCount;
 	if (car->action == LEFT_TURN) {
 		quadrantCount = 3;
-		quadrants[0] = 1;
-		quadrants[1] = 0;
+		quadrants[0] = 0;
+		quadrants[1] = 1;
 		quadrants[2] = 2;
 	} else if (car->action == RIGHT_TURN) {
 		quadrantCount = 1;
-		quadrants[0] = 1;
+		quadrants[0] = 0;
 	} else if (car->action == STRAIGHT) {
 		quadrantCount = 2;
-		quadrants[0] = 1;
-		quadrants[1] = 0;
+		quadrants[0] = 0;
+		quadrants[1] = 1;
 	} else {
 		// Should not go here.
 		assert(FALSE);
