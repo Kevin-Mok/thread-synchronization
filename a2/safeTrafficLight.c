@@ -15,7 +15,7 @@ void initSafeTrafficLight(SafeTrafficLight* light, int horizontal, int vertical)
 		light->lane_queue[i].back = malloc(sizeof(LaneNode));
 
 		light->lane_mutex[i] = (pthread_mutex_t)PTHREAD_MUTEX_INITIALIZER;
-		/* light->lane_turn[i] = (pthread_cond_t)PTHREAD_COND_INITIALIZER; */
+		light->lane_turn[i] = (pthread_cond_t)PTHREAD_COND_INITIALIZER;
 	}
 	light->light_mutex = (pthread_mutex_t)PTHREAD_MUTEX_INITIALIZER;
 	light->light_turn = (pthread_cond_t)PTHREAD_COND_INITIALIZER;
@@ -71,9 +71,9 @@ void waitForFrontLight(Car* car, SafeTrafficLight* light) {/*{{{*/
 		/* printf("Currently %d cars with Car %d in front.\n",
 				light->lane_queue[lane_index].count,
 				light->lane_queue[lane_index].cur_front->car->index); */
-		/* pthread_cond_wait(&light->lane_turn[lane_index],
-				&light->lane_mutex[lane_index]); */
-		pthread_cond_wait(&light->light_turn, &light->lane_mutex[lane_index]);
+		pthread_cond_wait(&light->lane_turn[lane_index],
+				&light->lane_mutex[lane_index]);
+		/* pthread_cond_wait(&light->light_turn, &light->lane_mutex[lane_index]); */
 	}
 	pthread_mutex_unlock(&light->lane_mutex[lane_index]);
 }/*}}}*/
@@ -135,7 +135,9 @@ void actTrafficLightValid(Car* car, SafeTrafficLight* light)/*{{{*/
 		}
 		/* waitForOppStraight(car, light); */
 	}
-	actTrafficLight(car, &light->base, NULL, NULL, NULL);
+	/* actTrafficLight(car, &light->base, NULL, NULL, NULL); */
+	actTrafficLight(car, &light->base, (void *)&pthread_mutex_unlock, 
+			(void *)&pthread_mutex_lock, &light->light_mutex);
 	pthread_mutex_unlock(&light->light_mutex);
 }/*}}}*/
 
@@ -159,7 +161,8 @@ void dequeueFrontLight(SafeTrafficLight* light, int lane_index)/*{{{*/
 	/* printf("Dequeued Car %d from Lane %d. New count is %d.\n",
 			cur_front->car->index, lane_index,
 			cur_lane_queue->count); */
-	/* pthread_cond_broadcast(&light->lane_turn[lane_index]); */
+	/* wake up cars waiting in same lane */
+	pthread_cond_broadcast(&light->lane_turn[lane_index]);
 	/* pthread_cond_broadcast(&light->light_turn); */
 	pthread_mutex_unlock(&light->lane_mutex[lane_index]);
 }/*}}}*/
@@ -167,6 +170,8 @@ void dequeueFrontLight(SafeTrafficLight* light, int lane_index)/*{{{*/
 void exitIntersectionLightValid(Car* car, SafeTrafficLight* light) {/*{{{*/
 	pthread_mutex_lock(&light->light_mutex);
 	exitIntersection(car, getLaneLight(car, &light->base));
+	/* wake up cars waiting for left and light */
+	pthread_cond_broadcast(&light->light_turn);
 	pthread_mutex_unlock(&light->light_mutex);
 	/* printf("Car %d exited from Lane %d. %d cars left in intersection "
 			"while Light is %d. %d cars left before light change.\n",
@@ -177,7 +182,6 @@ void exitIntersectionLightValid(Car* car, SafeTrafficLight* light) {/*{{{*/
 			car->index, getLaneIndexLight(car), getLightState(&light->base),
 			light->base.carsLeft); */
 	dequeueFrontLight(light, getLaneIndexLight(car)); 
-	pthread_cond_broadcast(&light->light_turn);
 }/*}}}*/
 
 void runTrafficLightCar(Car* car, SafeTrafficLight* light) {/*{{{*/

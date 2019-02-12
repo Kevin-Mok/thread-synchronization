@@ -49,7 +49,7 @@ typedef struct _SafeTrafficLight {
 	pthread_mutex_t lane_mutex[TRAFFIC_LIGHT_LANE_COUNT];
 	// need lane_turn for light bc. each lane is pretty individ. vs. stop
 	// just use light_mutex?
-	// pthread_cond_t lane_turn[TRAFFIC_LIGHT_LANE_COUNT];
+	pthread_cond_t lane_turn[TRAFFIC_LIGHT_LANE_COUNT];
 
 	// used for sync any time intersection events happen. 
 	pthread_mutex_t light_mutex;

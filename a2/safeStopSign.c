@@ -15,7 +15,7 @@ void initSafeStopSign(SafeStopSign* sign, int count) {/*{{{*/
 		sign->lane_queue[i].back = malloc(sizeof(LaneNode));
 
 		sign->lane_mutex[i] = (pthread_mutex_t)PTHREAD_MUTEX_INITIALIZER;
-		/* sign->lane_turn[i] = (pthread_cond_t)PTHREAD_COND_INITIALIZER; */
+		sign->lane_turn[i] = (pthread_cond_t)PTHREAD_COND_INITIALIZER;
 	}
 	sign->quadrants_mutex = (pthread_mutex_t)PTHREAD_MUTEX_INITIALIZER;
 	sign->quadrants_turn = (pthread_cond_t)PTHREAD_COND_INITIALIZER;
@@ -28,16 +28,25 @@ void destroySafeStopSign(SafeStopSign* sign) {/*{{{*/
 	destroyStopSign(&sign->base);
 
 	/* TODO: freeing malloc's */
-	/* for(i = 0; i < DIRECTION_COUNT; i++) {
-		LaneNode* cur_front = (*sign).lane_queue[i].orig_front;
-		LaneNode* next_front;
-		while (cur_front != (*sign).lane_queue[i].back) { 
-			next_front = cur_front->next;
-			free(cur_front->car);
-			printf("Freeing next.\n");
-			free(cur_front->next);
-			printf("Freeing front.\n");
+	/* LaneNode* cur_front;
+	LaneNode* next_front;
+	for(int i = 0; i < DIRECTION_COUNT; i++) {
+		cur_front = sign->lane_queue[i].orig_front; */
+		/* while (cur_front != (*sign).lane_queue[i].back) { */
+		/* while (cur_front != NULL) {
+			next_front = cur_front->next; */
+			/* don't need to free cars? */
+			/* if (cur_front->car != NULL) {
+				printf("Freeing car.\n");
+				free(cur_front->car);
+			}
+			if (cur_front->next != NULL) {
+				printf("Freeing next.\n");
+				free(cur_front->next);
+			}
+			printf("Freeing cur_front.\n");
 			free(cur_front);
+			cur_front = next_front;
 		}
 	} */
 }/*}}}*/
@@ -47,7 +56,8 @@ void addCarToLaneQueue(Car* car, SafeStopSign* sign)/*{{{*/
 	int lane_index = getLaneIndex(car);
 	/* create LaneNode for current Car */
 	LaneNode* cur_car_node = malloc(sizeof(LaneNode*));
-	cur_car_node->car = malloc(sizeof(Car*));
+	/* do I need to malloc for their car? */
+	/* cur_car_node->car = malloc(sizeof(Car*)); */
 	cur_car_node->next = malloc(sizeof(LaneNode*));
 	cur_car_node->car = car;
 
@@ -123,10 +133,10 @@ void waitForFrontOfQueue(Car* car, SafeStopSign* sign)/*{{{*/
 		printf("Currently %d cars with Car %d in front.\n",
 				sign->lane_queue[lane_index].count,
 				sign->lane_queue[lane_index].cur_front->car->index); */
-		/* pthread_cond_wait(&sign->lane_turn[lane_index],
-				&sign->lane_mutex[lane_index]); */
-		pthread_cond_wait(&sign->quadrants_turn,
+		pthread_cond_wait(&sign->lane_turn[lane_index],
 				&sign->lane_mutex[lane_index]);
+		/* pthread_cond_wait(&sign->quadrants_turn,
+				&sign->lane_mutex[lane_index]); */
 	}
 	pthread_mutex_unlock(&sign->lane_mutex[lane_index]);
 }/*}}}*/
@@ -231,11 +241,16 @@ void exitIntersectionValid(Car* car, SafeStopSign* sign)/*{{{*/
 	/* free car quadrants */
 	pthread_mutex_lock(&sign->quadrants_mutex);
 	setCarQuadrants(car, sign, 0);
+	/* pthread_mutex_unlock(&sign->quadrants_mutex); */
+
+	/* wake up cars waiting to enter intersection due to quadrants being busy */
+	pthread_cond_broadcast(&sign->quadrants_turn);
 	pthread_mutex_unlock(&sign->quadrants_mutex);
 
-	/* wake up cars waiting to enter intersection due to not being in front
-	 * or quadrants being busy */
-	pthread_cond_broadcast(&sign->quadrants_turn);
+	pthread_mutex_lock(&sign->lane_mutex[lane_index]);
+	/* wake up cars waiting to enter intersection due to not being in front */
+	pthread_cond_broadcast(&sign->lane_turn[lane_index]);
+	pthread_mutex_unlock(&sign->lane_mutex[lane_index]);
 
 	/* pthread_cond_broadcast(&sign->lane_turn[lane_index]); */
 }/*}}}*/

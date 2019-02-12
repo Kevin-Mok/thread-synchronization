@@ -1,11 +1,11 @@
 # To-Do
+- malloc mem for arrays in structs
 - freeing mem
 - add fxn def's
 - clean up code
 - test fresh clone
  
 ## Minor
-- ask about helgrind msgs
 
 ## Errors
 
