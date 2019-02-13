@@ -18,6 +18,7 @@ void initSafeStopSign(SafeStopSign* sign, int count) {/*{{{*/
 		/* sign->lane_queue[i].orig_front = (LaneNode*)malloc(sizeof(LaneNode));
 		sign->lane_queue[i].cur_front = (LaneNode*)malloc(sizeof(LaneNode));
 		sign->lane_queue[i].back = (LaneNode*)malloc(sizeof(LaneNode)); */
+		sign->lane_queue[i].orig_front = NULL;
 
 		sign->lane_mutex[i] = (pthread_mutex_t)PTHREAD_MUTEX_INITIALIZER;
 		sign->lane_turn[i] = (pthread_cond_t)PTHREAD_COND_INITIALIZER;
@@ -52,12 +53,12 @@ void destroyMyMallocs(SafeStopSign* sign) {/*{{{*/
 				free(cur_front->next);
 			} */
 			/* printf("Freeing cur_front.\n"); */
+
 			if (cur_front->car != NULL) {
 				cars_freed++;
-				printf("Freeing front %p with Car %d at %p.\n", cur_front,
-						cur_front->car->index, cur_front->car);
+				/* printf("Freeing front %p with Car %d at %p.\n", cur_front,
+						cur_front->car->index, cur_front->car); */
 			} else {
-				/* printf("Freeing front with no car.\n"); */
 				printf("Freeing front %p with no car at %p.\n", cur_front,
 						cur_front->car);
 			}
@@ -94,8 +95,8 @@ void destroyMyMallocs2(SafeStopSign* sign) {/*{{{*/
 }/*}}}*/
 
 void destroySafeStopSign(SafeStopSign* sign) {/*{{{*/
-	/* destroyMyMallocs(sign); */
-	destroyMyMallocs2(sign);
+	destroyMyMallocs(sign);
+	/* destroyMyMallocs2(sign); */
 	destroyStopSign(&sign->base);
 }/*}}}*/
 
@@ -108,6 +109,7 @@ void addCarToLaneQueue(Car* car, SafeStopSign* sign)/*{{{*/
 	/* cur_car_node->car = (Car*)malloc(sizeof(Car)); */
 	/* cur_car_node->next = (LaneNode*)malloc(sizeof(LaneNode)); */
 	cur_car_node->car = car;
+	cur_car_node->next = NULL;
 
 	LaneQueue* cur_lane_queue = &sign->lane_queue[lane_index];
 	/* add cur_car_node to cur_lane_queue after acquiring lock for cur lane*/
@@ -118,8 +120,8 @@ void addCarToLaneQueue(Car* car, SafeStopSign* sign)/*{{{*/
 			cur_lane_queue->total_count); */
 	if (cur_lane_queue->count == 0) {
 		/* check if first car for this lane to set orig_front */
-		/* if (cur_lane_queue->orig_front == NULL) { */
-		if (cur_lane_queue->total_count == 0) {
+		if (cur_lane_queue->orig_front == NULL) {
+		/* if (cur_lane_queue->total_count == 0) { */
 			cur_lane_queue->orig_front = cur_car_node;
 			/* printf("Assigning orig_front for Lane %d with Car %d.\n", lane_index, car->index); */
 		/* link prev. back to this car if not orig_front to keep list

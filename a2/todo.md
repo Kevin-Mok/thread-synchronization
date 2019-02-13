@@ -1,5 +1,7 @@
 # To-Do
 - freeing mem
+  - get rid of total_count
+    - use while to free
 - add fxn def's
 - clean up code
 - test fresh clone
