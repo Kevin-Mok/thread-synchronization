@@ -10,9 +10,9 @@ void initSafeTrafficLight(SafeTrafficLight* light, int horizontal, int vertical)
 	for(i = 0; i < TRAFFIC_LIGHT_LANE_COUNT; i++) {
 		/* init LaneQueue */
 		light->lane_queue[i].count = 0;
-		light->lane_queue[i].orig_front = malloc(sizeof(LaneNode));
-		light->lane_queue[i].cur_front = malloc(sizeof(LaneNode));
-		light->lane_queue[i].back = malloc(sizeof(LaneNode));
+		/* don't need to malloc mem for pointers in LaneQueue struct since will
+		 * malloc when creating LaneNode */
+		light->lane_queue[i].orig_front = NULL;
 
 		light->lane_mutex[i] = (pthread_mutex_t)PTHREAD_MUTEX_INITIALIZER;
 		light->lane_turn[i] = (pthread_cond_t)PTHREAD_COND_INITIALIZER;
@@ -21,10 +21,28 @@ void initSafeTrafficLight(SafeTrafficLight* light, int horizontal, int vertical)
 	light->light_turn = (pthread_cond_t)PTHREAD_COND_INITIALIZER;
 }/*}}}*/
 
+void destroyLaneNodesLight(SafeTrafficLight* light) {/*{{{*/
+	/* only need to free LaneNode's inside LaneQueue since all other var's will
+	 * be freed in testing when this light pointer is freed */
+	LaneNode* cur_front;
+	LaneNode* next_front;
+	int cars_freed = 0;
+	for(int i = 0; i < TRAFFIC_LIGHT_LANE_COUNT; i++) {
+		cur_front = light->lane_queue[i].orig_front;
+		while (cur_front != NULL) {
+			next_front = cur_front->next;
+			/* printf("next_front is: %p\n", next_front); */
+			cars_freed++;
+			free(cur_front);
+			cur_front = next_front;
+		}
+	}
+	printf("%d cars freed.\n", cars_freed);
+}/*}}}*/
+
 void destroySafeTrafficLight(SafeTrafficLight* light) {/*{{{*/
 	destroyTrafficLight(&light->base);
-
-	/* TODO: free malloc's */
+	destroyLaneNodesLight(light);
 }/*}}}*/
 
 void addCarToLaneLight(Car* car, SafeTrafficLight* light)/*{{{*/
@@ -33,17 +51,26 @@ void addCarToLaneLight(Car* car, SafeTrafficLight* light)/*{{{*/
 	/* EntryLane* lane = getLaneLight(car, &light->base); */
 
 	/* create LaneNode for current Car */
-	LaneNode* cur_car_node = malloc(sizeof(LaneNode*));
-	cur_car_node->car = malloc(sizeof(Car*));
-	cur_car_node->next = malloc(sizeof(LaneNode*));
+	LaneNode* cur_car_node = (LaneNode*)malloc(sizeof(LaneNode));
 	cur_car_node->car = car;
+	cur_car_node->next = NULL;
 
 	LaneQueue* cur_lane_queue = &light->lane_queue[lane_index];
 	/* add cur_car_node to cur_lane_queue after acquiring lock for cur lane*/
 	pthread_mutex_lock(&light->lane_mutex[lane_index]);
 	if (cur_lane_queue->count == 0) {
-		cur_lane_queue->orig_front = cur_car_node;
+		if (cur_lane_queue->orig_front == NULL) {
+			cur_lane_queue->orig_front = cur_car_node;
+			/* printf("Assigning orig_front for Lane %d with Car %d.\n", lane_index, car->index); */
+		/* link prev. back to this car if not orig_front to keep list
+		 * linked */
+		} else {
+			/* printf("LaneQueue is empty. orig_front is %p.", cur_lane_queue->orig_front); */
+			cur_lane_queue->back->next = cur_car_node;
+		}
+		/* printf("Adding Car %d to front.\n", cur_car_node->car->index); */
 		cur_lane_queue->cur_front = cur_car_node;
+		/* printf("cur_front is Car %d.\n", cur_lane_queue->cur_front->car->index); */
 		cur_lane_queue->back = cur_car_node;
 	} else {
 		cur_lane_queue->back->next = cur_car_node;
@@ -54,8 +81,13 @@ void addCarToLaneLight(Car* car, SafeTrafficLight* light)/*{{{*/
 	enterLane(car, getLaneLight(car, &light->base));
 	pthread_mutex_unlock(&light->light_mutex);
 	/* enterLane(car, getLane(car, &light->base)); */
-	/* printf("Added car %d to LaneQueue %d at pos %d.\n", car->index, lane_index,
-			cur_lane_queue->count - 1); */
+	/* printf("Added car %d to LaneQueue %d at pos %d. "
+			"cur_front is Car %d.\n", car->index, lane_index,
+			cur_lane_queue->count - 1, 
+			cur_lane_queue->cur_front->car->index); */
+	/* printf("Added car %d to LaneQueue %d at pos %d. ",
+			 car->index, lane_index, cur_lane_queue->count - 1);
+	printf("cur_front is Car %d.\n", cur_lane_queue->cur_front->car->index); */
 	pthread_mutex_unlock(&light->lane_mutex[lane_index]);
 }/*}}}*/
 
@@ -64,11 +96,14 @@ void waitForFrontLight(Car* car, SafeTrafficLight* light) {/*{{{*/
 	/* check if car is in front of queue before entering */
 	pthread_mutex_lock(&light->lane_mutex[lane_index]);
 	while (light->lane_queue[lane_index].cur_front->car != car) {
-		/* printf("Waiting for Car %d in Lane %d to be in front. Currently %d cars with Car %d in front.\n",
+		/* printf("Waiting for Car %d in Lane %d to be in front. "
+				"Currently %d cars with Car %d in front.\n",
 				car->index, getLaneIndexLight(car),
 				light->lane_queue[lane_index].count,
 				light->lane_queue[lane_index].cur_front->car->index); */
-		/* printf("Currently %d cars with Car %d in front.\n",
+		/* printf("Waiting for Car %d in Lane %d to be in front. ",
+				car->index, lane_index);
+		printf("Currently %d cars with Car %d in front.\n",
 				light->lane_queue[lane_index].count,
 				light->lane_queue[lane_index].cur_front->car->index); */
 		pthread_cond_wait(&light->lane_turn[lane_index],
@@ -93,7 +128,7 @@ void waitForOppStraight(Car* car, SafeTrafficLight* light) {/*{{{*/
 
 	while (getStraightCount(&light->base, opp_dir) != 0) {
 		/* printf("Waiting for left for Car %d in Lane %d. %d straight cars in opp. lane %d.\n",
-				car->index, getLaneIndex(car), 
+				car->index, getLaneIndexLight(car), 
 				getStraightCount(&light->base, opp_dir),
 				opp_straight_lane); */
 		pthread_cond_wait(&light->light_turn, &light->light_mutex);
@@ -106,7 +141,7 @@ void enterWhenCorrectLight(Car* car, SafeTrafficLight* light) {/*{{{*/
 	pthread_mutex_lock(&light->light_mutex);
 	while (getLightState(&light->base) != getDirNum(car)) {
 		/* printf("Waiting for Light %d for Car %d in Lane %d.\n",
-				getLightState(&light->base), car->index, getLaneIndex(car)); */
+				getLightState(&light->base), car->index, getLaneIndexLight(car)); */
 		pthread_cond_wait(&light->light_turn, &light->light_mutex);
 	}
 	/* printf("Car %d attempting to enter Lane %d while Light is %d.\n", 
@@ -128,7 +163,7 @@ void actTrafficLightValid(Car* car, SafeTrafficLight* light)/*{{{*/
 		while (getStraightCount(
 					&light->base, getOppositePosition(car->position)) != 0) {
 			/* printf("Waiting for left for Car %d in Lane %d. %d straight cars in opp. lane %d.\n",
-					car->index, getLaneIndex(car), 
+					car->index, getLaneIndexLight(car), 
 					getStraightCount(&light->base, opp_dir),
 					opp_straight_lane); */
 			pthread_cond_wait(&light->light_turn, &light->light_mutex);
@@ -153,7 +188,6 @@ void dequeueFrontLight(SafeTrafficLight* light, int lane_index)/*{{{*/
 	}
 	if (cur_lane_queue->count == 1) {
 		cur_lane_queue->cur_front = NULL;
-		cur_lane_queue->back = NULL;
 	} else {
 		cur_lane_queue->cur_front = cur_lane_queue->cur_front->next;
 	}
@@ -195,48 +229,3 @@ void runTrafficLightCar(Car* car, SafeTrafficLight* light) {/*{{{*/
 
 	exitIntersectionLightValid(car, light);
 }/*}}}*/
-
-/* enterAndActLightValid - deprecated {{{ */
-
-void enterAndActLightValid(Car* car, SafeTrafficLight* light) {
-	int lane_index = getLaneIndexLight(car);
-	/* check if car is in front of queue before entering */
-	pthread_mutex_lock(&light->lane_mutex[lane_index]);
-	while (light->lane_queue[lane_index].cur_front->car != car) {
-		pthread_cond_wait(&light->light_turn, &light->lane_mutex[lane_index]);
-	}
-	pthread_mutex_unlock(&light->lane_mutex[lane_index]);
-
-	/* check/wait for light to be same dir. as car by waiting for
-	 * light_turn signal since light could change after every car */
-	pthread_mutex_lock(&light->light_mutex);
-	while (getLightState(&light->base) != getDirNum(car)) {
-		/* printf("Waiting for Light %d for Car %d in Lane %d.\n",
-				getLightState(&light->base), car->index, getLaneIndex(car)); */
-		pthread_cond_wait(&light->light_turn, &light->light_mutex);
-	}
-	/* printf("Car %d entering Lane %d while Light is %d.\n",
-			car->index, getLaneIndexLight(car), getLightState(&light->base)); */
-	enterTrafficLight(car, &light->base);
-
-	/* trying to give up mutex after each step */
-	pthread_mutex_unlock(&light->light_mutex);
-	pthread_mutex_lock(&light->light_mutex);
-
-	/* only wait to act if car is going left */
-	if (car->action == LEFT_TURN) {
-		while (getStraightCount(
-					&light->base, getOppositePosition(car->position)) != 0) {
-			/* printf("Waiting for left for Car %d in Lane %d. %d straight cars in opp. lane %d.\n",
-					car->index, getLaneIndex(car), 
-					getStraightCount(&light->base, opp_dir),
-					opp_straight_lane); */
-			pthread_cond_wait(&light->light_turn, &light->light_mutex);
-		}
-	}
-	actTrafficLight(car, &light->base, NULL, NULL, NULL);
-	pthread_mutex_unlock(&light->light_mutex);
-}
-
-/* }}} enterAndActLightValid - deprecated */
-

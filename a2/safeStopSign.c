@@ -12,9 +12,6 @@ void initSafeStopSign(SafeStopSign* sign, int count) {/*{{{*/
 		sign->lane_queue[i].count = 0;
 		/* don't need to malloc mem for pointers in LaneQueue struct since will
 		 * malloc when creating LaneNode */
-		/* sign->lane_queue[i].orig_front = (LaneNode*)malloc(sizeof(LaneNode));
-		sign->lane_queue[i].cur_front = (LaneNode*)malloc(sizeof(LaneNode));
-		sign->lane_queue[i].back = (LaneNode*)malloc(sizeof(LaneNode)); */
 		sign->lane_queue[i].orig_front = NULL;
 
 		sign->lane_mutex[i] = (pthread_mutex_t)PTHREAD_MUTEX_INITIALIZER;
@@ -27,7 +24,7 @@ void initSafeStopSign(SafeStopSign* sign, int count) {/*{{{*/
 	}
 }/*}}}*/
 
-void destroyLaneNodes(SafeStopSign* sign) {
+void destroyLaneNodes(SafeStopSign* sign) {/*{{{*/
 	/* only need to free LaneNode's inside LaneQueue since all other var's will
 	 * be freed in testing when this sign pointer is freed */
 	LaneNode* cur_front;
@@ -44,7 +41,7 @@ void destroyLaneNodes(SafeStopSign* sign) {
 		}
 	}
 	printf("%d cars freed.\n", cars_freed);
-}
+}/*}}}*/
 
 void destroySafeStopSign(SafeStopSign* sign) {/*{{{*/
 	destroyStopSign(&sign->base);
@@ -56,9 +53,7 @@ void addCarToLaneQueue(Car* car, SafeStopSign* sign)/*{{{*/
 	int lane_index = getLaneIndex(car);
 	/* create LaneNode for current Car */
 	LaneNode* cur_car_node = (LaneNode*)malloc(sizeof(LaneNode));
-	/* do I need to malloc for their car? */
-	/* cur_car_node->car = (Car*)malloc(sizeof(Car)); */
-	/* cur_car_node->next = (LaneNode*)malloc(sizeof(LaneNode)); */
+	/* don't need to malloc for car since already malloc'd by testing */
 	cur_car_node->car = car;
 	cur_car_node->next = NULL;
 
@@ -110,7 +105,6 @@ void dequeueFront(SafeStopSign* sign, int lane_index)/*{{{*/
 			cur_front->car->index, *cur_front_token); */
 	if (cur_lane_queue->count == 1) {
 		cur_lane_queue->cur_front = NULL;
-		/* cur_lane_queue->back = NULL; */
 	} else {
 		cur_lane_queue->cur_front = cur_lane_queue->cur_front->next;
 	}

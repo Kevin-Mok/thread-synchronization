@@ -1,6 +1,9 @@
 p getLane(cur_front->car, &sign->base)->enterTokens[cur_front->car->index].valid
 p cur_lane_queue.count
 
+p car->index
+p getLaneIndexLight(car)
+
 p cur_front
 p cur_front->car
 p cur_front->car->index

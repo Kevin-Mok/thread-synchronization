@@ -1,12 +1,13 @@
 # To-Do
-- freeing mem
-  - get rid of total_count
-    - use while to free
+- light
+  - test simul. cars
+- stop
+  - fix dequeue and broadcasting
+    - should dequeue after exiting?
 - add fxn def's
 - clean up code
 - test fresh clone
  
-- malloc mem for arrays in structs and struct itself
  
 ## Minor
 

@@ -61,7 +61,8 @@ void initTrafficLight(TrafficLight* light, int eastWest, int northSouth) {/*{{{*
 void destroyTrafficLight(TrafficLight* light) {/*{{{*/
 
 	// Free lanes.
-	for (int i = 0; i < DIRECTION_COUNT; i++) {
+	/* for (int i = 0; i < DIRECTION_COUNT; i++) { */
+	for (int i = 0; i < TRAFFIC_LIGHT_LANE_COUNT; i++) {
 		free(light->entryLanes[i].enterTokens);
 		free(light->entryLanes[i].exitTokens);
 	}

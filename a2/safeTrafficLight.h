@@ -3,18 +3,7 @@
 #include "trafficLight.h"
 #include "safeStopSign.h"
 
-// imported from safeStopSign.h
-/* typedef struct _LaneNode {
-	Car* car;
-	struct _LaneNode* next;
-} LaneNode;
-
-typedef struct _LaneQueue {
-	int count;
-	LaneNode* orig_front;
-	LaneNode* cur_front;
-	LaneNode* back;
-} LaneQueue; */
+// imported LaneNode/Queue from safeStopSign.h
 
 /* SafeTrafficLight instr. {{{ */
 
@@ -42,13 +31,11 @@ typedef struct _SafeTrafficLight {
 	/* }}} instr. */
 	TrafficLight base;
 
-	// TODO: Add any members you need for synchronization here.
 	// need mutex and queue for each direction
 	LaneQueue lane_queue[TRAFFIC_LIGHT_LANE_COUNT];
 	// used for mutex of LaneQueue 
 	pthread_mutex_t lane_mutex[TRAFFIC_LIGHT_LANE_COUNT];
 	// need lane_turn for light bc. each lane is pretty individ. vs. stop
-	// just use light_mutex?
 	pthread_cond_t lane_turn[TRAFFIC_LIGHT_LANE_COUNT];
 
 	// used for sync any time intersection events happen. 
