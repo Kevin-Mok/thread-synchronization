@@ -14,6 +14,7 @@ typedef struct _LaneNode {/*{{{*/
 
 typedef struct _LaneQueue {/*{{{*/
 	int count;
+	int total_count;
 	LaneNode* orig_front;
 	LaneNode* cur_front;
 	LaneNode* back;
