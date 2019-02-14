@@ -113,11 +113,9 @@ void waitForFrontLight(Car* car, SafeTrafficLight* light) {/*{{{*/
 	pthread_mutex_unlock(&light->lane_mutex[lane_index]);
 }/*}}}*/
 
-int getDirNum(Car* car) {/*{{{*/
-	/* helper function to get index num. for light_mutex/turn array, hardcoded values
-	based on LightState and CarPosition values */
-	/* since E/W = 0/2 and E/W LightState = 1 */
-	return (car->position % 2 == 0) ? 1 : 0;
+int getLightStateForCar(Car* car) {/*{{{*/
+	return (car->position == EAST || car->position == WEST) ?
+		EAST_WEST : NORTH_SOUTH;
 }/*}}}*/
 
 void waitForOppStraight(Car* car, SafeTrafficLight* light) {/*{{{*/
@@ -139,7 +137,7 @@ void enterWhenCorrectLight(Car* car, SafeTrafficLight* light) {/*{{{*/
 	/* check/wait for light to be same dir. as car by waiting for
 	 * light_turn signal since light could change after every car */
 	pthread_mutex_lock(&light->light_mutex);
-	while (getLightState(&light->base) != getDirNum(car)) {
+	while (getLightState(&light->base) != getLightStateForCar(car)) {
 		/* printf("Waiting for Light %d for Car %d in Lane %d.\n",
 				getLightState(&light->base), car->index, getLaneIndexLight(car)); */
 		pthread_cond_wait(&light->light_turn, &light->light_mutex);
@@ -159,6 +157,7 @@ void actTrafficLightValid(Car* car, SafeTrafficLight* light)/*{{{*/
 {
 	pthread_mutex_lock(&light->light_mutex);
 	/* only wait to act if car is going left */
+	/* TODO: get rid of waitForOppStraight */
 	if (car->action == LEFT_TURN) {
 		while (getStraightCount(
 					&light->base, getOppositePosition(car->position)) != 0) {
@@ -223,7 +222,10 @@ void runTrafficLightCar(Car* car, SafeTrafficLight* light) {/*{{{*/
 
 	/* Enter and act are separate calls because a car turning left can first
 	enter the intersection before it needs to check for oncoming traffic. */
-	enterTrafficLightValid(car, light);
+	/* TODO: remove this fxn if not going to use */
+	/* enterTrafficLightValid(car, light); */
+	waitForFrontLight(car, light);
+	enterWhenCorrectLight(car, light);
 	actTrafficLightValid(car, light);
 	/* enterAndActLightValid(car, light); */
 

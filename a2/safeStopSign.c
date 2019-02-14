@@ -114,6 +114,8 @@ void dequeueFront(SafeStopSign* sign, int lane_index)/*{{{*/
 			cur_lane_queue->count); */
 	/* printf("Car %d has token value %d after dequeuing car.\n",
 			cur_front->car->index, *cur_front_token); */
+	/* wake up cars waiting to enter intersection due to not being in front */
+	pthread_cond_broadcast(&sign->lane_turn[lane_index]);
 	pthread_mutex_unlock(&sign->lane_mutex[lane_index]);
 	/* printf("Cur front token value is %d after freeing.\n", *cur_front_token); */
 }/*}}}*/
@@ -139,10 +141,10 @@ void waitForFrontOfQueue(Car* car, SafeStopSign* sign)/*{{{*/
 
 int checkIfQuadrantsSafe(Car* car, SafeStopSign* sign) {/*{{{*/
 	/* assume if called this function that have quadrants_mutex */
-	int carQuadrants[QUADRANT_COUNT];
-	int quadrantCount = getStopSignRequiredQuadrants(car, carQuadrants);
-	for (int i = 0; i < quadrantCount; i++) {
-		if (sign->busy_quadrants[carQuadrants[i]] == 1) { 
+	int car_quadrants[QUADRANT_COUNT];
+	int quadrant_count = getStopSignRequiredQuadrants(car, car_quadrants);
+	for (int i = 0; i < quadrant_count; i++) {
+		if (sign->busy_quadrants[car_quadrants[i]] == 1) { 
 			/* printf("Not safe for Car %d in Lane %d to make Action %d.\n",
 					car->index, getLaneIndex(car), car->action); */
 			return 0;
@@ -154,38 +156,21 @@ int checkIfQuadrantsSafe(Car* car, SafeStopSign* sign) {/*{{{*/
 void setCarQuadrants(Car* car, SafeStopSign* sign, int value) {/*{{{*/
 	/* assume if called this function that have quadrants_mutex */
 	int i;
-	int carQuadrants[QUADRANT_COUNT];
-	int quadrantCount = getStopSignRequiredQuadrants(car, carQuadrants);
+	int car_quadrants[QUADRANT_COUNT];
+	int quadrant_count = getStopSignRequiredQuadrants(car, car_quadrants);
 	/* printf("Setting Car %d quadrants to %d.\n", car->index, value); */
-	for (i = 0; i < quadrantCount; i++) {
-		sign->busy_quadrants[carQuadrants[i]] = value;
+	for (i = 0; i < quadrant_count; i++) {
+		sign->busy_quadrants[car_quadrants[i]] = value;
 	}
 
 	/* check if simul. cars in intersection  {{{ */
 	
 	/* if (value == 1) {
 		int j;
-		for (i = 0; i < QUADRANT_COUNT; i++) { */
-			/* old {{{ */
-			
-			/* match = 0;
-			if (sign->busy_quadrants[carQuadrants[i]] == 1) {
-				for (j = 0; j < quadrantCount; j++) {
-					if (i == carQuadrants[j]) {
-						match = 1;
-						break;
-					}
-				}
-				if (match == 0) {
-					printf("Simul. cars in intersection: Car %d taking Action %d but Quadrant %d \n");
-					break;
-				}
-			} */
-			
-			/* }}} old */
-			/* printf("%d", sign->busy_quadrants[i]);
-			for (j = 0; j < quadrantCount; j++) {
-				if (carQuadrants[j] == i) {
+		for (i = 0; i < QUADRANT_COUNT; i++) {
+			printf("%d", sign->busy_quadrants[i]);
+			for (j = 0; j < quadrant_count; j++) {
+				if (car_quadrants[j] == i) {
 					printf("C");
 				}
 			}
@@ -222,7 +207,13 @@ void exitIntersectionValid(Car* car, SafeStopSign* sign)/*{{{*/
 {
 	int lane_index = getLaneIndex(car);
 
+	pthread_mutex_lock(&sign->quadrants_mutex);
 	exitIntersection(car, getLane(car, &sign->base));
+	/* free car quadrants */
+	setCarQuadrants(car, sign, 0);
+	/* wake up cars waiting to enter intersection due to quadrants being busy */
+	pthread_cond_broadcast(&sign->quadrants_turn);
+	pthread_mutex_unlock(&sign->quadrants_mutex);
 	/* printf("Car %d exited from Lane %d.\n", car->index, getLaneIndex(car)); */
 	/* printf("Car %d went through Lane %d and has token value %d.\n", car->index,
 			getLaneIndex(car),
@@ -233,22 +224,6 @@ void exitIntersectionValid(Car* car, SafeStopSign* sign)/*{{{*/
 			getLaneIndex(car),
 			getLane(car, &sign->base)->enterTokens[car->index].valid);*/
 	/* printf("Car %d dequeued from Lane %d.\n", car->index, getLaneIndex(car)); */
-
-	/* free car quadrants */
-	pthread_mutex_lock(&sign->quadrants_mutex);
-	setCarQuadrants(car, sign, 0);
-	/* pthread_mutex_unlock(&sign->quadrants_mutex); */
-
-	/* wake up cars waiting to enter intersection due to quadrants being busy */
-	pthread_cond_broadcast(&sign->quadrants_turn);
-	pthread_mutex_unlock(&sign->quadrants_mutex);
-
-	pthread_mutex_lock(&sign->lane_mutex[lane_index]);
-	/* wake up cars waiting to enter intersection due to not being in front */
-	pthread_cond_broadcast(&sign->lane_turn[lane_index]);
-	pthread_mutex_unlock(&sign->lane_mutex[lane_index]);
-
-	/* pthread_cond_broadcast(&sign->lane_turn[lane_index]); */
 }/*}}}*/
 
 void runStopSignCar(Car* car, SafeStopSign* sign) {/*{{{*/

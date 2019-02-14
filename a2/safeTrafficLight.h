@@ -16,7 +16,7 @@
 */
 
 /* }}} SafeTrafficLight instr. */
-typedef struct _SafeTrafficLight {
+typedef struct _SafeTrafficLight {/*{{{*/
 
 	/* instr. {{{ */
 	
@@ -35,13 +35,14 @@ typedef struct _SafeTrafficLight {
 	LaneQueue lane_queue[TRAFFIC_LIGHT_LANE_COUNT];
 	// used for mutex of LaneQueue 
 	pthread_mutex_t lane_mutex[TRAFFIC_LIGHT_LANE_COUNT];
-	// need lane_turn for light bc. each lane is pretty individ. vs. stop
 	pthread_cond_t lane_turn[TRAFFIC_LIGHT_LANE_COUNT];
 
 	// used for sync any time intersection events happen. 
 	pthread_mutex_t light_mutex;
 	pthread_cond_t light_turn;
-} SafeTrafficLight;
+} SafeTrafficLight;/*}}}*/
+
+/* fxn def's {{{ */
 
 /**
 * @brief Initializes the safe traffic light.
@@ -66,3 +67,78 @@ void destroySafeTrafficLight(SafeTrafficLight* light);
 * @param light pointer to the traffic light intersection.
 */
 void runTrafficLightCar(Car* car, SafeTrafficLight* light);
+
+/**
+* @brief Free memory allocated to LaneNodes.
+*
+* @param light pointer to the traffic light intersection.
+*/
+void destroyLaneNodesLight(SafeTrafficLight* light);
+
+/**
+* @brief Add car to their respective LaneQueue.
+*
+* @param car pointer to the car.
+* @param light pointer to the traffic light intersection.
+*/
+void addCarToLaneLight(Car* car, SafeTrafficLight* light);
+
+/**
+* @brief Check if this car is in the front of its LaneQueue or else wait.
+*
+* @param car pointer to the car.
+* @param light pointer to the traffic light intersection.
+*/
+void waitForFrontLight(Car* car, SafeTrafficLight* light);
+
+/**
+* @brief Return the LightState associated with the car's position.
+*
+* @param car pointer to the car.
+* @return LightState corresponding to car's position.
+*/
+int getLightStateForCar(Car* car);
+
+/**
+* @brief Have this car wait until the opposite lane has no cars going straight.
+*
+* @param car pointer to the car.
+* @param light pointer to the traffic light intersection.
+*/
+void waitForOppStraight(Car* car, SafeTrafficLight* light);
+
+/**
+* @brief Have this car wait until the correct light before entering the
+* intersection.
+*
+* @param car pointer to the car.
+* @param light pointer to the traffic light intersection.
+*/
+void enterWhenCorrectLight(Car* car, SafeTrafficLight* light);
+
+/**
+* @brief Have this car act when safe.
+*
+* @param car pointer to the car.
+* @param light pointer to the traffic light intersection.
+*/
+void actTrafficLightValid(Car* car, SafeTrafficLight* light);
+
+/**
+* @brief Advances the front of the LaneQueue to the next car.
+*
+* @param light pointer to the traffic light intersection.
+* @param lane_index index of the LaneQueue.
+*/
+void dequeueFrontLight(SafeTrafficLight* light, int lane_index);
+
+/**
+* @brief Have the car exit the intersection (sync'ed), along with other required
+* caretaking duties.
+*
+* @param car pointer to the car.
+* @param light pointer to the traffic light intersection.
+*/
+void exitIntersectionLightValid(Car* car, SafeTrafficLight* light);
+
+/* }}} fxn def's */

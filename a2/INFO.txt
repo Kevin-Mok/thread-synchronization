@@ -1,0 +1,15 @@
+- added descriptions for all new functions I created in the corresponding header
+  file
+- used a custom queue (LaneQueue) and node (LaneNode) structure to keep ensure
+  correct exit order
+  - store first car added to queue as starting point when freeing
+  - move "front" pointer up (while storing original front) to keep track of
+    current queue
+- used mutex/turn for each lane and single global mutex/turn for intersection
+  - lane mutex's used for sync'ing access to LaneQueue's
+  - global mutex used for sync'ing access to intersection
+    (entering/acting/exiting)
+  - both turns are broadcasted once car has called exitIntersection
+    - in both scenarios, the lane turn wakes up cars waiting in the LaneQueue
+    - stop: global turn wakes up cars waiting for quadrants to be free
+    - light: global turn wakes up cars waiting for left turn and correct light

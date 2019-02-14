@@ -1,12 +1,6 @@
 # To-Do
-- light
-  - test simul. cars
-- stop
-  - fix dequeue and broadcasting
-    - should dequeue after exiting?
-- add fxn def's
-- clean up code
-- test fresh clone
+- clean up code/dir.
+
  
  
 ## Minor
