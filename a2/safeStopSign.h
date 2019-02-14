@@ -1,11 +1,7 @@
-/* include {{{ */
-
 #pragma once
 
 #include "car.h"
 #include "stopSign.h"
-
-/* }}} include */
 
 typedef struct _LaneNode {/*{{{*/
 	Car* car;
@@ -19,8 +15,6 @@ typedef struct _LaneQueue {/*{{{*/
 	LaneNode* back;
 } LaneQueue;/*}}}*/
 
-/* SafeStopSign descr. {{{ */
-
 /**
 * @brief Structure that you can modify as part of your solution to implement
 * proper synchronization for the stop sign intersection.
@@ -28,11 +22,7 @@ typedef struct _LaneQueue {/*{{{*/
 * This is basically a wrapper around StopSign, since you are not allowed to 
 * modify or directly access members of StopSign.
 */
-
-/* }}} SafeStopSign descr. */
 typedef struct _SafeStopSign {/*{{{*/
-	/* instr. {{{ */
-	
 	/**
 	* @brief The underlying stop sign.
 	*
@@ -40,8 +30,6 @@ typedef struct _SafeStopSign {/*{{{*/
 	* access its members. All interactions must be done through the functions
 	* you have been provided.
 	*/
-	
-	/* }}} instr. */
 	StopSign base;
 
 	// need mutex, cv and queue for each direction
@@ -56,8 +44,6 @@ typedef struct _SafeStopSign {/*{{{*/
 	// used for waiting for busy quadrants
 	pthread_cond_t quadrants_turn;
 } SafeStopSign;/*}}}*/
-
-/* fxn def's {{{ */
 
 /**
 * @brief Initializes the safe stop sign.
@@ -147,5 +133,3 @@ void goThroughStopSignValid(Car* car, SafeStopSign* sign);
 * @param sign pointer to the stop sign intersection.
 */
 void exitIntersectionValid(Car* car, SafeStopSign* sign);
-
-/* }}} fxn def's */

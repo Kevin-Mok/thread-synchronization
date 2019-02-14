@@ -3,9 +3,7 @@
 #include "trafficLight.h"
 #include "safeStopSign.h"
 
-// imported LaneNode/Queue from safeStopSign.h
-
-/* SafeTrafficLight instr. {{{ */
+// imports LaneNode/Queue from safeStopSign.h
 
 /**
 * @brief Structure that you can modify as part of your solution to implement
@@ -14,12 +12,7 @@
 * This is basically a wrapper around TrafficLight, since you are not allowed to 
 * modify or directly access members of TrafficLight.
 */
-
-/* }}} SafeTrafficLight instr. */
 typedef struct _SafeTrafficLight {/*{{{*/
-
-	/* instr. {{{ */
-	
 	/**
 	* @brief The underlying light.
 	*
@@ -27,8 +20,6 @@ typedef struct _SafeTrafficLight {/*{{{*/
 	* access its members. All interactions must be done through the functions
 	* you have been provided.
 	*/
-	
-	/* }}} instr. */
 	TrafficLight base;
 
 	// need mutex and queue for each direction
@@ -41,8 +32,6 @@ typedef struct _SafeTrafficLight {/*{{{*/
 	pthread_mutex_t light_mutex;
 	pthread_cond_t light_turn;
 } SafeTrafficLight;/*}}}*/
-
-/* fxn def's {{{ */
 
 /**
 * @brief Initializes the safe traffic light.
@@ -140,5 +129,3 @@ void dequeueFrontLight(SafeTrafficLight* light, int lane_index);
 * @param light pointer to the traffic light intersection.
 */
 void exitIntersectionLightValid(Car* car, SafeTrafficLight* light);
-
-/* }}} fxn def's */
