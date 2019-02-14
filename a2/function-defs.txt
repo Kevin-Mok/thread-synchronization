@@ -1,8 +1,0 @@
-- CarContext = testing.c
-- CarToken = intersection.h
-- enterLane(Car* car, EntryLane* lane) = intersection.c
-- EntryLane = intersection.h
-- exitIntersection = intersection.c
-- getLaneIndex(Car* car) = stopSign.c
-- getOppositePosition(CarPosition position) = car.c
-- randomLightAmount = trafficLight.c // determines when light changes
